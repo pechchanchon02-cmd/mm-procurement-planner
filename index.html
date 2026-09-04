@@ -287,7 +287,7 @@ const STEP_DEFAULTS=[
  {mkey:'fabric_pay',label:'จ่ายผ้า (รับผ้า N+1)',category:'ผ้า',default_supplier:'TSK',sort:10},
  {mkey:'fabric_in',label:'ผ้าเข้าโรงตัด',category:'ผ้า',default_supplier:'',sort:20},
  {mkey:'stock_pick',label:'เบิกของจากสต็อก',category:'คลัง',default_supplier:'คลัง',sort:30},
- {mkey:'sew_done',label:'ตัดเย็บเสร็จ',category:'ตัดเย็บ',default_supplier:'ช่างเสือ',sort:40},
+ {mkey:'sew_done',label:'ตัดเย็บ',category:'ตัดเย็บ',default_supplier:'ช่างเสือ',sort:40},
  {mkey:'to_screen',label:'ของถึงร้านสกรีน/ปัก',category:'สกรีน',default_supplier:'ช่างศักดิ์',sort:50},
  {mkey:'back_in',label:'สกรีน/ปักเสร็จ กลับเข้าคลัง',category:'สกรีน',default_supplier:'',sort:60},
  {mkey:'queue_in',label:'ของเข้าคลัง เข้าคิวสกรีนใน',category:'สกรีน',default_supplier:'',sort:70},
@@ -974,14 +974,14 @@ function demoData(){DEMO=true;
     MS[id]=ms.map((m,i)=>({id:'d'+id+i,job_id:id,mkey:m[0],label:m[1],supplier:m[2],plan_date:m[3],actual_date:m[4]||null,sort:(i+1)*10}))};
   mk('MD-1301','Merch - Pear - Pongnaret - เสื้อโปโล 60 ตัว',{need_fabric:true,need_sewing:true,screen_where:'นอก'},'กิ่ง',d(9),[
     ['fabric_pay','จ่ายผ้า (รับผ้า N+1)','TSK',d(-6),d(-6)],['fabric_in','ผ้าเข้าโรงตัด','ช่างเสือ',d(-5),d(-4)],
-    ['sew_done','ตัดเย็บเสร็จ','ช่างเสือ',d(1)],['to_screen','ของถึงร้านสกรีน/ปัก','ช่างศักดิ์',d(3)],
+    ['sew_done','ตัดเย็บ','ช่างเสือ',d(1)],['to_screen','ของถึงร้านสกรีน/ปัก','ช่างศักดิ์',d(3)],
     ['back_in','สกรีน/ปักเสร็จ กลับเข้าคลัง','',d(8)],['ship','ส่งลูกค้า','',d(9)]]);
   mk('GSC-540','CT-101508/ก้อย หมวก 500 ใบ ปักโลโก้',{need_fabric:false,need_sewing:false,screen_where:'นอก'},'พี่แหวน',d(4),[
     ['stock_pick','เบิกของจากสต็อก','คลัง',d(-2),d(-2)],['to_screen','ของถึงร้านปัก','ช่างศักดิ์',d(-1)],
     ['back_in','ปักเสร็จ กลับเข้าคลัง','',d(3)],['ship','ส่งลูกค้า','',d(4)]]);
   mk('MD-1136','Forestian - กระเป๋าผ้าแคนวาส 100 ใบ',{need_fabric:true,need_sewing:true,screen_where:'ใน'},'เพชร',d(2),[
     ['fabric_pay','จ่ายผ้า (รับผ้า N+1)','TSK',d(-8)],['fabric_in','ผ้าเข้าโรงตัด','ช่างขวัญ',d(-7)],
-    ['sew_done','ตัดเย็บเสร็จ','ช่างขวัญ',d(-2)],['queue_in','ของเข้าคลัง เข้าคิวสกรีนใน','',d(-1)],['ship','ส่งลูกค้า','',d(2)]]);
+    ['sew_done','ตัดเย็บ','ช่างขวัญ',d(-2)],['queue_in','ของเข้าคลัง เข้าคิวสกรีนใน','',d(-1)],['ship','ส่งลูกค้า','',d(2)]]);
   mk('MD-944','Merch-Cartoon คุณจ๊อบ เสื้อยืด 40 ตัว',{need_fabric:false,need_sewing:false,screen_where:'ใน'},'โม',d(6),[
     ['stock_pick','เบิกของจากสต็อก','คลัง',d(0),d(0)],['queue_in','เข้าคิวสกรีนใน','',d(2)],['ship','ส่งลูกค้า','',d(6)]]);
   Object.assign(PROC['MD-1301'],{sale_price:36000,qty:60,cost_fabric:9800,cost_sewing:3600,cost_screen_out:4200});
