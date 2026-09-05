@@ -294,6 +294,13 @@ const STEP_DEFAULTS=[
  {mkey:'ship',label:'ส่งลูกค้า',category:'ส่ง',default_supplier:'',sort:80}];
 let STEPMASTER=STEP_DEFAULTS.map(x=>({...x}));
 let SUPPLIERS=['TSK','ช่างเสือ','ช่างขวัญ','ช่างศักดิ์','คลัง'];
+let SUPALIAS={};   // alias(normalized) -> canonical  (มาจาก suppliers.aliases + ชื่อ canonical เอง)
+const normSup=n=>(n||'').trim().toLowerCase().replace(/^(พี่|ช่าง|ลุง|ป้า|น้า|ร้าน|คุณ)\s*/,'');
+function buildSupAlias(rows){SUPALIAS={};
+  rows.forEach(r=>{const cn=r.name;
+    SUPALIAS[normSup(cn)]=cn;
+    (r.aliases||'').split(',').map(x=>x.trim()).filter(Boolean).forEach(a=>SUPALIAS[normSup(a)]=cn)})}
+function canonSup(n){if(!n)return n;return SUPALIAS[normSup(n)]||n.trim()}
 function stepOf(k){return STEPMASTER.find(x=>x.mkey===k)||{label:k,default_supplier:''}}
 function supSelect(cls,val){
   const opts=[...new Set([...SUPPLIERS,...(val?[val]:[])])];
@@ -308,8 +315,10 @@ async function handleSupChange(sel,apply){
   sel.style.display='none';sel.parentElement.insertBefore(inp,sel);inp.focus();
   let done=false;
   const fin=async(save)=>{if(done)return;done=true;
-    const name=(inp.value||'').trim();inp.remove();sel.style.display='';
+    let name=(inp.value||'').trim();inp.remove();sel.style.display='';
     if(!save||!name){sel.value='';return}
+    const cn=canonSup(name);
+    if(cn!==name){toast('ใช้ชื่อหลัก "'+cn+'" ให้ (ชื่อเดียวกัน)');name=cn}
     if(!SUPPLIERS.includes(name)){SUPPLIERS.push(name);
       if(sb&&!DEMO)await sb.from('suppliers').upsert({name});}
     if(![...sel.options].some(o=>o.value===name||o.textContent===name)){
@@ -390,7 +399,7 @@ async function loadAll(){
   const [{data:js},{data:ps},{data:ms},{data:sup},{data:sm}]=await Promise.all([
     sb.from('jobs').select('*'),sb.from('procurement').select('*'),sb.from('milestones').select('*'),
     sb.from('suppliers').select('*'),sb.from('step_master').select('*')]);
-  if(sup&&sup.length)SUPPLIERS=sup.map(x=>x.name);
+  if(sup&&sup.length){SUPPLIERS=sup.map(x=>x.name);buildSupAlias(sup)}
   if(sm&&sm.length)STEPMASTER=sm.sort((a,b)=>a.sort-b.sort);
   JOBS={};(js||[]).forEach(j=>JOBS[j.job_id]=j);
   PROC={};(ps||[]).forEach(p=>PROC[p.job_id]=p);
@@ -744,7 +753,8 @@ function renderSup(ids){
     const pend=msOf(id).filter(m=>!m.actual_date);
     pend.forEach((m,i)=>{
       if(!m.supplier)return;
-      (bySup[m.supplier]=bySup[m.supplier]||[]).push({id,m,now:i===0,
+      const cs=canonSup(m.supplier);
+      (bySup[cs]=bySup[cs]||[]).push({id,m,now:i===0,
         waitOn:i>0?pend[i-1]:null})})});
   const noSup=[];ids.forEach(id=>{const n=nextMs(id);if(n&&!n.supplier)noSup.push({id,m:n})});
   const box=(sup,items)=>{
