@@ -160,8 +160,8 @@ main{max-width:1200px;margin:0 auto;padding:12px 16px 120px}
 .ms .del{background:none;border:0;color:var(--line-2);padding:2px 4px}.ms .del:hover{color:var(--crit)}
 .ev{font-size:12px;color:var(--ink-2);border-left:2px solid var(--line-2);padding:2px 0 2px 9px;margin-bottom:5px}
 .ev.cmt{background:var(--accent-soft);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:6px 10px;color:var(--ink);line-height:1.5}
-#modal,#wiz,#costPg{position:fixed;inset:0;display:none;align-items:flex-start;justify-content:center;z-index:50;background:rgba(0,0,0,.45);overflow-y:auto;padding:30px 10px}
-#modal.on,#wiz.on,#costPg.on{display:flex}
+#modal,#wiz,#costPg,#woPg{position:fixed;inset:0;display:none;align-items:flex-start;justify-content:center;z-index:50;background:rgba(0,0,0,.45);overflow-y:auto;padding:30px 10px}
+#modal.on,#wiz.on,#costPg.on,#woPg.on{display:flex}
 .box{background:var(--surface);border-radius:14px;padding:20px;width:540px;max-width:96vw;box-shadow:var(--shadow)}
 .box h2{font-size:17px;margin-bottom:14px}
 .qrow{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
@@ -203,6 +203,71 @@ select.sup{width:112px;padding:5px;border:1px solid var(--line-2);border-radius:
   .cd{min-height:70px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---- work order ---- */
+#woPg .box{width:760px}
+.woGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.woSizes{width:100%;border-collapse:collapse;margin:6px 0 4px}
+.woSizes th,.woSizes td{border:1px solid var(--line-2);padding:5px 8px;text-align:center;font-size:13px}
+.woSizes th{background:var(--surface-2);font-weight:600}
+.woSizes input{width:70px;padding:4px;border:1px solid var(--line-2);border-radius:6px;text-align:center;background:var(--surface)}
+.woSizes input.sz{width:56px}
+.woTot{font-size:13px;margin:2px 0 10px}
+.woTot.err{color:var(--warn-ink);font-weight:600}
+.woImgs{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}
+.woImgs .wi{position:relative}
+.woImgs img{width:86px;height:86px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.woImgs .rm{position:absolute;top:-6px;right:-6px;background:var(--crit);color:#fff;border:0;border-radius:50%;width:20px;height:20px;font-size:11px;line-height:1;padding:0}
+#woSync{display:none;background:var(--info-bg);color:var(--info-ink);border-radius:8px;padding:8px 12px;font-size:12.5px;margin:8px 0;align-items:center;gap:10px}
+#woSync.on{display:flex}
+/* ---- print sheet (A4) ---- */
+#woPrint{display:none;background:#fff;color:#000;font-family:var(--font-ui)}
+body.woview #woPrint{display:block;max-width:1000px;margin:0 auto;padding:10px}
+body.woview header,body.woview #bar,body.woview main,body.woview #drawer,body.woview #ovl{display:none!important}
+.wp{border:2px solid #000}
+.wpHead{display:flex;justify-content:space-between;align-items:baseline;padding:6px 12px}
+.wpHead h1{font-size:22px;font-weight:800}
+.wpHead .by{font-size:13px;font-weight:400}
+.wpBody{display:grid;grid-template-columns:58% 42%;gap:0}
+.wpL{border-right:2px solid #000}
+.wpRow{display:flex;border-top:2px solid #000}
+.wpRow>div{padding:4px 10px;font-size:14px}
+.wpName{flex:1}
+.wpStyle{background:#000;color:#fff;text-align:center;min-width:150px;font-weight:700}
+.wpStyle small{display:block;font-weight:400;font-size:11px}
+.wpQty{border-left:2px solid #000;min-width:90px;text-align:center;font-weight:700}
+.wpImg{text-align:center;padding:8px;border-top:2px solid #000}
+.wpImg img{max-height:330px;max-width:100%;object-fit:contain}
+.wpTbl{width:100%;border-collapse:collapse}
+.wpTbl th,.wpTbl td{border:1px solid #000;padding:4px 6px;text-align:center;font-size:14px}
+.wpTbl th{background:#f0f0f0}
+.wpTbl .cm{font-size:10.5px;color:#555}
+.wpName{font-size:13px;max-height:120px;overflow:hidden}
+.wpR .blk{border-top:2px solid #000;display:flex}
+.wpR .blk:first-child{border-top:0}
+.wpR .bk{background:#000;color:#fff;font-weight:700;min-width:78px;display:flex;align-items:center;justify-content:center;padding:6px}
+.wpR .bv{padding:6px 10px;font-size:13.5px;flex:1}
+.wpDates{background:#000;color:#fff;padding:6px 10px;font-weight:700;font-size:15px;text-align:center}
+.wpDates b{font-size:20px}
+.wpDrow{display:flex;border-top:1px solid #000}
+.wpDrow .dk{flex:1;padding:4px 10px;font-size:13px}
+.wpLot{background:#7ff3ff;font-weight:700;padding:1px 6px}
+.wpNotes{padding:6px 10px;font-size:13.5px;min-height:40px;white-space:pre-wrap}
+.wpExtra{padding:14px 0}
+.wpExtra h3{font-size:14px;margin:8px 0 4px}
+.wpExtra .gal{display:flex;flex-wrap:wrap;gap:10px}
+.wpExtra .gal figure{margin:0;max-width:300px}
+.wpExtra .gal img{max-width:300px;max-height:300px;border:1px solid #ccc;border-radius:6px}
+.wpExtra figcaption{font-size:11.5px;color:#444}
+#woBar{position:fixed;bottom:16px;right:16px;z-index:75;display:none;gap:8px}
+body.woview #woBar{display:flex}
+@media print{
+  body>*:not(#woPrint){display:none!important}
+  #woPrint{display:block!important;padding:0}
+  .wpExtra{page-break-before:auto}
+  @page{size:A4;margin:8mm}
+}
+
 </style>
 </head>
 <body>
@@ -242,6 +307,7 @@ select.sup{width:112px;padding:5px;border:1px solid var(--line-2);border-radius:
 <div id="ovl"></div>
 <div id="drawer">
   <div class="hd"><b id="dTitle">—</b><span class="sp"></span>
+    <button class="btn" id="dWO">📄 ใบสั่งผลิต</button>
     <button class="btn" id="dCost">💰 ต้นทุน</button>
     <button class="btn" id="dRemove" title="เอาออกจากบอร์ด">🗑</button>
     <button class="btn" id="dClose">✕</button></div>
@@ -273,6 +339,9 @@ select.sup{width:112px;padding:5px;border:1px solid var(--line-2);border-radius:
     <button class="btnP" id="cSave">บันทึก</button>
   </div>
 </div></div>
+<div id="woPg"><div class="box" id="woBox"></div></div>
+<div id="woPrint"></div>
+<div id="woBar"><button class="btnP" onclick="window.print()">🖨 พิมพ์ / PDF</button></div>
 <div id="toast"></div>
 <div id="lightbox"><img></div>
 
@@ -297,6 +366,16 @@ const STEP_DEFAULTS=[
  {mkey:'back_in',label:'สกรีน/ปักเสร็จ กลับเข้าคลัง',category:'สกรีน',default_supplier:'',sort:60},
  {mkey:'queue_in',label:'ของเข้าคลัง เข้าคิวสกรีนใน',category:'สกรีน',default_supplier:'',sort:70},
  {mkey:'ship',label:'ส่งลูกค้า',category:'ส่ง',default_supplier:'',sort:80}];
+const PATTERN_DEFAULTS=[
+ {pattern_key:'basic',name:'Signature Basic tee (MM08)',sku_ref:'2510GMT117',fabric_default:'Cotton100% semi 32',sort:10,
+  sizes:[{size:'S',chest_in:32,len_in:25},{size:'M',chest_in:36,len_in:27},{size:'L',chest_in:40,len_in:29},{size:'XL',chest_in:44,len_in:30},{size:'XXL',chest_in:48,len_in:31},{size:'3XL',chest_in:50,len_in:32},{size:'4XL',chest_in:52,len_in:33}]},
+ {pattern_key:'oversize',name:'Oversize Drop Shoulder (MM05)',sku_ref:'2508GMT100',fabric_default:'Cotton100% comb 20',sort:20,
+  sizes:[{size:'M',chest_in:40,len_in:27},{size:'L',chest_in:44,len_in:28},{size:'XL',chest_in:48,len_in:29},{size:'2XL',chest_in:52,len_in:30}]},
+ {pattern_key:'boxy',name:'Boxy ไหล่ตก ครอป',sku_ref:'2511GMT129',fabric_default:'Cotton100% comb 20',sort:30,
+  sizes:[{size:'S',chest_in:42,len_in:25},{size:'M',chest_in:46,len_in:25.5},{size:'L',chest_in:50,len_in:26},{size:'XL',chest_in:54,len_in:27}]},
+ {pattern_key:'babytee',name:'Baby tee (MM04)',sku_ref:'2508GMT099',fabric_default:'Cotton100% comb 40 interlock',sort:40,
+  sizes:[{size:'S',chest_in:28,len_in:19},{size:'M',chest_in:31,len_in:19.5},{size:'L',chest_in:34,len_in:20},{size:'XL',chest_in:37,len_in:20.5}]}];
+let PATTERNS=PATTERN_DEFAULTS.map(x=>({...x}));let WOS={};
 let STEPMASTER=STEP_DEFAULTS.map(x=>({...x}));
 let SUPPLIERS=['TSK','ช่างเสือ','ช่างขวัญ','ช่างศักดิ์','คลัง'];
 let SUPALIAS={};   // alias(normalized) -> canonical  (มาจาก suppliers.aliases + ชื่อ canonical เอง)
@@ -401,15 +480,20 @@ $('#cSave').onclick=()=>{cfg={...cfg,url:$('#cUrl').value.trim(),key:$('#cKey').
 $('#cDemo').onclick=()=>{$('#modal').classList.remove('on');demoData();render();$('#demoBadge').style.display='inline'};
 
 async function loadAll(){
-  const [{data:js},{data:ps},{data:ms},{data:sup},{data:sm}]=await Promise.all([
+  const [{data:js},{data:ps},{data:ms},{data:sup},{data:sm},{data:pat},{data:wos}]=await Promise.all([
     sb.from('jobs').select('*'),sb.from('procurement').select('*'),sb.from('milestones').select('*'),
-    sb.from('suppliers').select('*'),sb.from('step_master').select('*')]);
+    sb.from('suppliers').select('*'),sb.from('step_master').select('*'),
+    sb.from('patterns').select('*'),sb.from('work_orders').select('*')]);
+  if(pat&&pat.length)PATTERNS=pat.sort((a,b)=>(a.sort||0)-(b.sort||0));
+  WOS={};(wos||[]).forEach(w=>WOS[w.job_id]=w);
   if(sup&&sup.length){SUPPLIERS=sup.map(x=>x.name);buildSupAlias(sup)}
   if(sm&&sm.length)STEPMASTER=sm.sort((a,b)=>a.sort-b.sort);
   JOBS={};(js||[]).forEach(j=>JOBS[j.job_id]=j);
   PROC={};(ps||[]).forEach(p=>PROC[p.job_id]=p);
   MS={};(ms||[]).forEach(m=>{(MS[m.job_id]=MS[m.job_id]||[]).push(m)});
   render();
+  const wp=new URLSearchParams(location.search).get('wo');
+  if(wp){const w=WOS[wp];if(w){document.body.classList.add('woview');renderWOPrint(w)}else toast('ไม่พบใบงาน '+wp)}
   refreshRaw();   // เติม/อัพเดทข้อมูลงานจากชีท raw เบื้องหลัง (งานที่เปิดก่อน raw มา จะได้ข้อมูลตามทีหลัง)
 }
 async function refreshRaw(){
@@ -798,6 +882,7 @@ let CUR=null;
 async function openDrawer(id){
   CUR=id;const j=JOBS[id]||{job_id:id},p=PROC[id]||{job_id:id};
   $('#dTitle').textContent=id;
+  $('#dWO').textContent=WOS[id]?'📄 ใบสั่งผลิต ✓':'📄 ใบสั่งผลิต';
   const im=imgOf(id);
   const list=msOf(id);
   $('#dBody').innerHTML=`
@@ -946,6 +1031,7 @@ document.onpaste=e=>{if(!$('#drawer').classList.contains('open')||!CUR)return;
 
 /* ============ cost page (แยกจากบอร์ด) ============ */
 $('#dCost').onclick=()=>{if(CUR)openCost(CUR)};
+$('#dWO').onclick=()=>{if(CUR)openWO(CUR)};
 function openCost(id){
   const p=PROC[id]||{job_id:id},j=JOBS[id]||{};
   const money=(label,key)=>`<div class="fld"><label>${label}</label><input type="number" step="any" min="0" class="cIn" id="c_${key}" value="${esc(p[key]??'')}"></div>`;
@@ -1010,6 +1096,216 @@ document.addEventListener('click',e=>{
     $('#lightbox').classList.add('on');return}
   if(t.closest('#lightbox'))$('#lightbox').classList.remove('on');
 },true);
+
+/* ================= work order (ใบสั่งผลิต) ================= */
+function guessPattern(name){name=(name||'').toLowerCase();
+  if(/boxy|บ๊อก|บ็อก/.test(name))return'boxy';
+  if(/baby|เบบี้/.test(name))return'babytee';
+  if(/oversiz|โอเวอร์/.test(name))return'oversize';
+  return'basic'}
+function guessQty(name){const m=(name||'').replace(/,/g,'').match(/รวม\s*(\d{1,6})\s*(ตัว|ใบ|ชิ้น)/)||(name||'').replace(/,/g,'').match(/(\d{1,6})\s*(ตัว|ใบ|ชิ้น)/);return m?+m[1]:null}
+function parseSizeQty(name){ // "M - 19 ตัว ... 3XL - 15 ตัว" -> {M:19,'3XL':15}
+  const out={};const re=/(5XL|4XL|3XL|2XL|XXL|XL|L|M|S)\s*[-–:]\s*(\d{1,5})\s*ตัว/gi;
+  let m;while((m=re.exec(name||''))!==null)out[m[1].toUpperCase()]=(out[m[1].toUpperCase()]||0)+ +m[2];
+  return out}
+function msPlan(id,keys){for(const k of keys){const m=msOf(id).find(x=>x.mkey===k);if(m&&m.plan_date)return m.plan_date}return null}
+let WOCUR=null;
+function woDraft(id){
+  const j=JOBS[id]||{},p=PROC[id]||{},ex=WOS[id];
+  if(ex)return {...ex,sizes:(ex.sizes||[]).map(x=>({...x})),extra_rows:ex.extra_rows||[],images:ex.images||[]};
+  const pk=guessPattern(j.name),pat=PATTERNS.find(x=>x.pattern_key===pk);
+  const sq=parseSizeQty(j.name);
+  const sizes=(pat?pat.sizes:[]).map(x=>({size:x.size,chest_in:x.chest_in,len_in:x.len_in,qty:sq[x.size]??''}));
+  Object.keys(sq).forEach(sz=>{if(!sizes.some(r=>r.size===sz))sizes.push({size:sz,chest_in:'',len_in:'',qty:sq[sz]})});
+  return {job_id:id,pattern_key:pk,pattern_name:pat?pat.name:'',
+    sizes,
+    qty_total:guessQty(j.name),fabric_type:pat?pat.fabric_default:'',fabric_color:'',fabric_folds:'',fabric_kg:'',
+    label_type:'ติดลาเบลตาไซส์มาตรฐานปกติ',screen_at:p.screen_shop||'',screen_method:(()=>{const t=j.tags||'';
+      for(const x of ['DTF','DTG','Silkscreen','Silk Screen','Sublimation','ปัก','UV'])if(t.includes(x))return x;return''})(),
+    pack_method:'แพ็คแยก 1:1',lot_no:'',sewing_details:'',notes:'',extra_rows:[],images:[],
+    d_fabric_in:msPlan(id,['fabric_in']),d_sew_done:msPlan(id,['sew_done']),
+    d_deliver:msPlan(id,['back_in','queue_in'])||j.due_date||null};
+}
+function openWO(id){
+  WOCUR=woDraft(id);closeDrawer();renderWOForm();$('#woPg').classList.add('on');
+}
+function woSum(){return WOCUR.sizes.reduce((s,r)=>s+(parseInt(r.qty)||0),0)}
+function renderWOForm(){
+  const w=WOCUR,j=JOBS[w.job_id]||{};
+  const segBtn=p=>`<button data-p="${p.pattern_key}" class="${w.pattern_key===p.pattern_key?'on':''}">${esc(p.name.split(' (')[0])}</button>`;
+  const f=(label,key,ph)=>`<div class="fld"><label>${label}</label><input class="wof" data-k="${key}" value="${esc(w[key]??'')}" placeholder="${ph||''}"></div>`;
+  const d=(label,key)=>`<div class="fld"><label>${label}</label><input type="date" class="wod" data-k="${key}" value="${w[key]||''}"></div>`;
+  $('#woBox').innerHTML=`<h2>📄 ใบสั่งผลิต — ${esc(w.job_id)}</h2>
+    <div class="meta"><b>${esc(j.name||'')}</b></div>
+    <div class="fld"><label>แพทเทิร์นเสื้อ (เลือกแล้วตารางไซส์ขึ้นเอง)</label>
+      <div class="seg" id="woPat">${PATTERNS.map(segBtn).join('')}<button data-p="__custom" class="${w.pattern_key==='__custom'?'on':''}">พิเศษ</button></div></div>
+    <table class="woSizes"><tr><th>ไซส์</th><th>อก (นิ้ว)</th><th>ยาว (นิ้ว)</th><th>จำนวน (ตัว)</th><th></th></tr>
+      ${w.sizes.map((r,i)=>`<tr>
+        <td><input class="sz" data-i="${i}" data-f="size" value="${esc(r.size)}"></td>
+        <td><input class="sz" data-i="${i}" data-f="chest_in" value="${esc(r.chest_in??'')}"></td>
+        <td><input class="sz" data-i="${i}" data-f="len_in" value="${esc(r.len_in??'')}"></td>
+        <td><input data-i="${i}" data-f="qty" value="${esc(r.qty??'')}" inputmode="numeric"></td>
+        <td><button class="del woDelRow" data-i="${i}" style="background:none;border:0;color:var(--line-2)">✕</button></td></tr>`).join('')}
+    </table>
+    <button class="btn2" id="woAddRow" style="padding:4px 10px;font-size:12px">＋ เพิ่มไซส์</button>
+    <span class="woTot" id="woTot"></span>
+    ${w.pattern_key==='__custom'?`<div style="display:flex;gap:6px;margin:6px 0">
+      <input id="woNewPat" placeholder="ตั้งชื่อแพทเทิร์นนี้ เพื่อบันทึกเข้า master ใช้ซ้ำได้" style="flex:1;padding:6px 8px;border:1px solid var(--line-2);border-radius:7px;font-size:12.5px">
+      <button class="btn2" id="woSavePat" style="font-size:12px">บันทึกเป็นแพทเทิร์นใหม่</button></div>`:''}
+    <div class="row2" style="margin-top:10px">${f('จำนวนรวมของงาน (ตัว)','qty_total')}${f('เลขกอง','lot_no','เช่น BC69060515')}</div>
+    <div class="woGrid">${f('ประเภทผ้า','fabric_type')}${f('สีผ้า','fabric_color','เช่น ฟ้า 68-L')}
+      ${f('จำนวนผ้า (พับ)','fabric_folds')}${f('นุ่ง/กิโล','fabric_kg')}</div>
+    <div class="woGrid">${f('สกรีนที่','screen_at')}${f('วิธีสกรีน','screen_method')}
+      ${f('ลาเบล','label_type')}${f('รูปแบบการแพ็ค','pack_method')}</div>
+    <div class="row3">${d('ผ้าถึงโรงตัดเย็บ','d_fabric_in')}${d('ผ้าต้องตัดเย็บเสร็จ','d_sew_done')}${d('วันที่ต้องส่งมอบ','d_deliver')}</div>
+    <div id="woSync"><span>วันที่ในใบงานต่างจากแผนในบอร์ด</span><button class="btn2" id="woSyncBtn">อัพเดทแผนในบอร์ดตามใบงาน</button></div>
+    <div class="fld"><label>ดีเทลตัดเย็บ (พลิกแพลงได้เต็มที่)</label><textarea class="wof" data-k="sewing_details" rows="3">${esc(w.sewing_details||'')}</textarea></div>
+    ${w.extra_rows.map((r,i)=>`<div class="row2"><div class="fld"><input class="woxK" data-i="${i}" placeholder="หัวข้อ" value="${esc(r.label||'')}"></div>
+      <div class="fld" style="display:flex;gap:6px"><input class="woxV" data-i="${i}" placeholder="รายละเอียด" value="${esc(r.value||'')}" style="flex:1"><button class="del woxD" data-i="${i}" style="background:none;border:0;color:var(--line-2)">✕</button></div></div>`).join('')}
+    <button class="btn2" id="woAddX" style="font-size:12px;padding:4px 10px">＋ เพิ่มหัวข้อเอง</button>
+    <div class="fld" style="margin-top:10px"><label>หมายเหตุอื่นๆ</label><textarea class="wof" data-k="notes" rows="2">${esc(w.notes||'')}</textarea></div>
+    <div class="fld"><label>รูปแนบ (ดีเทลเย็บ/ตัวอย่าง — Ctrl+V วางได้เลย)</label>
+      <div class="woImgs" id="woImgs">${w.images.map((u,i)=>`<span class="wi"><img src="${esc(u)}"><button class="rm" data-i="${i}">✕</button></span>`).join('')}
+        <button class="btn2" id="woUp" style="height:86px;width:86px">📷</button>
+        <input type="file" id="woFile" accept="image/*" multiple style="display:none"></div></div>
+    <div style="display:flex;gap:8px;justify-content:space-between;margin-top:8px">
+      <button class="btn2" id="woClose">ปิด</button>
+      <span style="display:flex;gap:8px">
+        <button class="btn2" id="woShare">🔗 copy ลิงก์ให้ช่าง</button>
+        <button class="btn2" id="woPrev">🖨 พิมพ์</button>
+        <button class="btnG" id="woSave">💾 บันทึกใบงาน</button></span></div>`;
+  wireWO();updWoTot();updSyncBar();
+}
+function updWoTot(){const t=woSum(),g=parseInt(WOCUR.qty_total)||0;const el=$('#woTot');
+  el.textContent=`รวม ${t.toLocaleString()} ตัว`+(g?` / จำนวนงาน ${g.toLocaleString()}`:'');
+  el.className='woTot'+((g&&t!==g)?' err':'');
+  if(g&&t!==g)el.textContent+=`  ⚠ ต่างกัน ${Math.abs(t-g)}`}
+function updSyncBar(){const w=WOCUR;
+  const diff=(w.d_fabric_in||'')!==(msPlan(w.job_id,['fabric_in'])||'')||
+    (w.d_sew_done||'')!==(msPlan(w.job_id,['sew_done'])||'')||
+    (w.d_deliver||'')!==((msPlan(w.job_id,['back_in','queue_in'])||JOBS[w.job_id]?.due_date)||'');
+  $('#woSync').classList.toggle('on',diff)}
+function wireWO(){
+  const w=WOCUR;
+  $$('#woPat button').forEach(b=>b.onclick=()=>{
+    const pk=b.dataset.p;w.pattern_key=pk;
+    if(pk==='__custom'){w.pattern_name='แพทเทิร์นพิเศษ';w.sizes=w.sizes.length?w.sizes:[{size:'',chest_in:'',len_in:'',qty:''}]}
+    else{const pat=PATTERNS.find(x=>x.pattern_key===pk);w.pattern_name=pat.name;
+      w.sizes=pat.sizes.map(x=>({size:x.size,chest_in:x.chest_in,len_in:x.len_in,
+        qty:(w.sizes.find(o=>o.size===x.size)||{}).qty||''}));
+      if(!w.fabric_type||PATTERNS.some(x=>x.fabric_default===w.fabric_type))w.fabric_type=pat.fabric_default}
+    renderWOForm()});
+  $$('#woBox .woSizes input').forEach(el=>el.oninput=()=>{
+    w.sizes[+el.dataset.i][el.dataset.f]=el.value;if(el.dataset.f==='qty')updWoTot()});
+  $$('#woBox .woDelRow').forEach(b=>b.onclick=()=>{w.sizes.splice(+b.dataset.i,1);renderWOForm()});
+  $('#woAddRow').onclick=()=>{w.sizes.push({size:'',chest_in:'',len_in:'',qty:''});renderWOForm()};
+  $$('#woBox .wof').forEach(el=>el.oninput=()=>{w[el.dataset.k]=el.value;if(el.dataset.k==='qty_total')updWoTot()});
+  $$('#woBox .wod').forEach(el=>el.onchange=()=>{w[el.dataset.k]=el.value||null;updSyncBar()});
+  $('#woSyncBtn').onclick=async()=>{
+    const map=[['d_fabric_in','fabric_in'],['d_sew_done','sew_done']];
+    for(const [k,mk] of map){const m=msOf(w.job_id).find(x=>x.mkey===mk);
+      if(m&&w[k]&&m.plan_date!==w[k]){await msPatch(w.job_id,m,{plan_date:w[k]});}}
+    const md=msOf(w.job_id).find(x=>x.mkey==='back_in')||msOf(w.job_id).find(x=>x.mkey==='queue_in');
+    if(md&&w.d_deliver&&md.plan_date!==w.d_deliver)await msPatch(w.job_id,md,{plan_date:w.d_deliver});
+    logEvent(w.job_id,'sync วันแผนจากใบงาน','','');toast('อัพเดทแผนในบอร์ดแล้ว ✓');render();updSyncBar()};
+  $$('#woBox .woxK').forEach(el=>el.oninput=()=>w.extra_rows[+el.dataset.i].label=el.value);
+  $$('#woBox .woxV').forEach(el=>el.oninput=()=>w.extra_rows[+el.dataset.i].value=el.value);
+  $$('#woBox .woxD').forEach(b=>b.onclick=()=>{w.extra_rows.splice(+b.dataset.i,1);renderWOForm()});
+  $('#woAddX').onclick=()=>{w.extra_rows.push({label:'',value:''});renderWOForm()};
+  const sp=$('#woSavePat');if(sp)sp.onclick=async()=>{
+    const nm=$('#woNewPat').value.trim();if(!nm){toast('ตั้งชื่อก่อนครับ');return}
+    const key='custom_'+Date.now().toString(36);
+    const row={pattern_key:key,name:nm,fabric_default:w.fabric_type||'',sort:900,
+      sizes:w.sizes.filter(r=>r.size).map(r=>({size:r.size,chest_in:+r.chest_in||null,len_in:+r.len_in||null}))};
+    if(!DEMO){const {error}=await sb.from('patterns').insert(row);if(error){toast(error.message);return}}
+    PATTERNS.push(row);w.pattern_key=key;w.pattern_name=nm;renderWOForm();
+    toast('บันทึกแพทเทิร์น "'+nm+'" เข้า master แล้ว ✓')};
+  $('#woUp').onclick=()=>$('#woFile').click();
+  $('#woFile').onchange=e=>{[...e.target.files].forEach(f=>woUpload(f))};
+  $$('#woImgs .rm').forEach(b=>b.onclick=()=>{w.images.splice(+b.dataset.i,1);renderWOForm()});
+  $('#woClose').onclick=()=>$('#woPg').classList.remove('on');
+  $('#woShare').onclick=()=>{const u=location.origin+location.pathname+'?wo='+w.job_id;
+    navigator.clipboard.writeText(u).then(()=>toast('copy ลิงก์แล้ว — ส่งให้ช่างเปิดได้เลย (ต้องบันทึกใบงานก่อน)'))};
+  $('#woPrev').onclick=async()=>{await saveWO(true);renderWOPrint(w);window.print()};
+  $('#woSave').onclick=()=>saveWO(false);
+}
+async function woUpload(blob){
+  if(DEMO){toast('DEMO อยู่');return}
+  toast('อัพโหลดรูป...');
+  try{const bmp=await createImageBitmap(blob);
+    const sc=Math.min(1,1400/Math.max(bmp.width,bmp.height));
+    const cv=document.createElement('canvas');cv.width=bmp.width*sc;cv.height=bmp.height*sc;
+    cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);
+    const out=await new Promise(res=>cv.toBlob(res,'image/jpeg',.87));
+    const path=`wo/${WOCUR.job_id}/${Date.now()}.jpg`;
+    const {error}=await sb.storage.from('job-images').upload(path,out,{contentType:'image/jpeg',upsert:true});
+    if(error)throw error;
+    const {data}=sb.storage.from('job-images').getPublicUrl(path);
+    WOCUR.images.push(data.publicUrl);renderWOForm();toast('แนบรูปแล้ว ✓');
+  }catch(e){toast('อัพโหลดไม่ได้: '+e.message)}
+}
+document.addEventListener('paste',e=>{
+  if(!$('#woPg').classList.contains('on'))return;
+  const it=[...(e.clipboardData?.items||[])].find(x=>x.type.startsWith('image/'));
+  if(it){e.preventDefault();woUpload(it.getAsFile())}});
+async function saveWO(quiet){
+  const w=WOCUR;w.qty_total=parseInt(w.qty_total)||woSum()||null;
+  const row={...w,sizes:w.sizes.filter(r=>r.size),updated_at:new Date().toISOString(),created_by:w.created_by||cfg.who};
+  if(!DEMO){const {error}=await sb.from('work_orders').upsert(row);
+    if(error){toast(/find the table/.test(error.message)?'ต้องรัน migration-workorder.sql ใน Supabase ก่อน':'บันทึกไม่ได้: '+error.message);return}}
+  WOS[w.job_id]=row;
+  if(!quiet){logEvent(w.job_id,'ใบสั่งผลิต','',`บันทึก (${row.sizes.length} ไซส์ รวม ${woSum()} ตัว)`);
+    toast('บันทึกใบงานแล้ว ✓')}
+}
+function cmOf(w,r,which){
+  const pat=PATTERNS.find(x=>x.pattern_key===w.pattern_key);
+  const ps=pat&&(pat.sizes||[]).find(x=>x.size===r.size);
+  const v=ps?(which==='chest'?ps.chest_cm:ps.len_cm):null;
+  if(v)return v+' ซม.';
+  const inch=parseFloat(which==='chest'?r.chest_in:r.len_in);
+  return inch?(Math.round(inch*2.54*10)/10)+' ซม.':'';}
+function thFull(d){if(!d)return'-';const x=D(d);return `${String(x.getDate()).padStart(2,'0')}/${String(x.getMonth()+1).padStart(2,'0')}/${x.getFullYear()}`}
+function renderWOPrint(w){
+  const j=JOBS[w.job_id]||{},im=imgOf(w.job_id);
+  const sizes=(w.sizes||[]).filter(r=>r.size&&(parseInt(r.qty)||0)>0);
+  const useAll=sizes.length?sizes:(w.sizes||[]).filter(r=>r.size);
+  const tot=(w.sizes||[]).reduce((s,r)=>s+(parseInt(r.qty)||0),0);
+  $('#woPrint').innerHTML=`<div class="wp">
+    <div class="wpHead"><h1>ใบสั่งผลิต <span class="by">Merchmaker by Giftwise Asia</span></h1>
+      <div>วันที่: ${thFull(iso(today()))}</div></div>
+    <div class="wpBody">
+      <div class="wpL">
+        <div class="wpRow"><div class="wpName"><b>ชื่องาน:</b> ${esc(j.name||'').slice(0,80)}<br><b>เลขงาน:</b> ${esc(w.job_id)}</div>
+          <div class="wpStyle"><small>แบบเสื้อ:</small>${esc(w.pattern_name||'-')}</div>
+          <div class="wpQty">จำนวน:<br>${(w.qty_total||tot||0).toLocaleString()} ตัว</div></div>
+        <div class="wpImg">${im?`<img src="${esc(im)}">`:'<div style="padding:60px;color:#999">(ไม่มีรูป)</div>'}</div>
+        <table class="wpTbl"><tr><th>ไซส์</th>${useAll.map(r=>`<th>${esc(r.size)}</th>`).join('')}<th>รวม</th></tr>
+          <tr><td><b>อก</b></td>${useAll.map(r=>`<td>${r.chest_in?esc(r.chest_in)+'"<div class="cm">'+cmOf(w,r,'chest')+'</div>':''}</td>`).join('')}<td rowspan="2" style="background:#f0f0f0"></td></tr>
+          <tr><td><b>ยาว</b></td>${useAll.map(r=>`<td>${r.len_in?esc(r.len_in)+'"<div class="cm">'+cmOf(w,r,'len')+'</div>':''}</td>`).join('')}</tr>
+          <tr><td><b>จำนวน</b></td>${useAll.map(r=>`<td><b>${(parseInt(r.qty)||0)||''}</b></td>`).join('')}<td><b>${tot.toLocaleString()}</b></td></tr></table>
+        <div class="wpRow"><div style="min-width:70px"><b>ลาเบล</b></div><div>${esc(w.label_type||'-')}</div></div>
+      </div>
+      <div class="wpR">
+        <div class="wpDates">วันที่ต้องส่งมอบ:<br><b>${thFull(w.d_deliver)}</b></div>
+        <div class="wpDrow"><div class="dk">ผ้าถึงโรงตัดเย็บ: <b>${thFull(w.d_fabric_in)}</b></div></div>
+        <div class="wpDrow"><div class="dk">ผ้าต้องตัดเย็บเสร็จ: <b>${thFull(w.d_sew_done)}</b></div></div>
+        <div class="blk" style="border-top:2px solid #000"><div class="bk">ผ้า</div><div class="bv"><b>ประเภทผ้า:</b> ${esc(w.fabric_type||'-')}<br>
+          <b>สี:</b> ${esc(w.fabric_color||'-')} <b>จำนวนผ้า:</b> ${esc(w.fabric_folds||'-')} พับ ${w.fabric_kg?('นุ่ง '+esc(w.fabric_kg)+' กิโล'):''}</div></div>
+        <div class="blk"><div class="bk">ตัดเย็บ</div><div class="bv"><b>ตัดเย็บที่:</b> ${esc((PROC[w.job_id]||{}).cutsew_shop||'-')}<br><b>แพทเทิร์น:</b> <span style="color:#c00;font-weight:700">${esc(w.pattern_name||'-')}</span>
+          ${w.sewing_details?'<br>'+esc(w.sewing_details).replace(/\n/g,'<br>'):''}</div></div>
+        <div class="blk"><div class="bk">ลาเบล</div><div class="bv">${esc(w.label_type||'-')}</div></div>
+        <div class="blk"><div class="bk">สกรีน</div><div class="bv"><b>สกรีนที่:</b> ${esc(w.screen_at||'-')} <b>วิธีสกรีน:</b> ${esc(w.screen_method||'-')}</div></div>
+        <div class="blk"><div class="bk">แพ็ค</div><div class="bv"><b>รูปแบบการแพ็ค:</b> ${esc(w.pack_method||'-')}</div></div>
+        ${(w.extra_rows||[]).filter(r=>r.label).map(r=>`<div class="blk"><div class="bk" style="font-size:12px">${esc(r.label)}</div><div class="bv">${esc(r.value||'')}</div></div>`).join('')}
+        <div class="blk"><div class="bv wpNotes"><b style="color:#c00">หมายเหตุอื่นๆ:</b> ${esc(w.notes||'')}<br><br>
+          <b>เลขกอง:</b> ${w.lot_no?`<span class="wpLot">${esc(w.lot_no)}</span>`:'-'}</div></div>
+      </div>
+    </div>
+  </div>
+  ${(w.images||[]).length?`<div class="wpExtra"><h3>รูปแนบ / ดีเทลเพิ่มเติม (${w.images.length})</h3>
+    <div class="gal">${w.images.map(u=>`<figure><img src="${esc(u)}"></figure>`).join('')}</div></div>`:''}`;
+}
+
 boot();
 </script>
 </body>
