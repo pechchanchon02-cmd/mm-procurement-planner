@@ -220,6 +220,9 @@ select.sup{width:112px;padding:5px;border:1px solid var(--line-2);border-radius:
 .woImgs .rm{position:absolute;top:-6px;right:-6px;background:var(--crit);color:#fff;border:0;border-radius:50%;width:20px;height:20px;font-size:11px;line-height:1;padding:0}
 #woSync{display:none;background:var(--info-bg);color:var(--info-ink);border-radius:8px;padding:8px 12px;font-size:12.5px;margin:8px 0;align-items:center;gap:10px}
 #woSync.on{display:flex}
+.dragH{color:var(--ink-3);user-select:none;font-size:15px;text-align:center;width:26px}
+.dragging{opacity:.45}
+.ms .dragH{flex:0 0 18px}
 /* ---- print sheet (A4) ---- */
 #woPrint{display:none;background:#fff;color:#000;font-family:var(--font-ui)}
 body.woview #woPrint{display:block;max-width:1000px;margin:0 auto;padding:10px}
@@ -367,13 +370,13 @@ const STEP_DEFAULTS=[
  {mkey:'queue_in',label:'ของเข้าคลัง เข้าคิวสกรีนใน',category:'สกรีน',default_supplier:'',sort:70},
  {mkey:'ship',label:'ส่งลูกค้า',category:'ส่ง',default_supplier:'',sort:80}];
 const PATTERN_DEFAULTS=[
- {pattern_key:'basic',name:'Signature Basic tee (MM08)',sku_ref:'2510GMT117',fabric_default:'Cotton100% semi 32',sort:10,
+ {pattern_key:'basic',name:'เสื้อยืดปกติ (MM08)',sku_ref:'2510GMT117',fabric_default:'Cotton100% semi 32',sort:10,
   sizes:[{size:'S',chest_in:32,len_in:25},{size:'M',chest_in:36,len_in:27},{size:'L',chest_in:40,len_in:29},{size:'XL',chest_in:44,len_in:30},{size:'XXL',chest_in:48,len_in:31},{size:'3XL',chest_in:50,len_in:32},{size:'4XL',chest_in:52,len_in:33}]},
- {pattern_key:'oversize',name:'Oversize Drop Shoulder (MM05)',sku_ref:'2508GMT100',fabric_default:'Cotton100% comb 20',sort:20,
+ {pattern_key:'oversize',name:'เสื้อโอเวอร์ไซส์ ไหล่ตก (MM05)',sku_ref:'2508GMT100',fabric_default:'Cotton100% comb 20',sort:20,
   sizes:[{size:'M',chest_in:40,len_in:27},{size:'L',chest_in:44,len_in:28},{size:'XL',chest_in:48,len_in:29},{size:'2XL',chest_in:52,len_in:30}]},
- {pattern_key:'boxy',name:'Boxy ไหล่ตก ครอป',sku_ref:'2511GMT129',fabric_default:'Cotton100% comb 20',sort:30,
+ {pattern_key:'boxy',name:'เสื้อบ็อกซี่ ไหล่ตก ครอป',sku_ref:'2511GMT129',fabric_default:'Cotton100% comb 20',sort:30,
   sizes:[{size:'S',chest_in:42,len_in:25},{size:'M',chest_in:46,len_in:25.5},{size:'L',chest_in:50,len_in:26},{size:'XL',chest_in:54,len_in:27}]},
- {pattern_key:'babytee',name:'Baby tee (MM04)',sku_ref:'2508GMT099',fabric_default:'Cotton100% comb 40 interlock',sort:40,
+ {pattern_key:'babytee',name:'เสื้อเบบี้ที (MM04)',sku_ref:'2508GMT099',fabric_default:'Cotton100% comb 40 interlock',sort:40,
   sizes:[{size:'S',chest_in:28,len_in:19},{size:'M',chest_in:31,len_in:19.5},{size:'L',chest_in:34,len_in:20},{size:'XL',chest_in:37,len_in:20.5}]}];
 let PATTERNS=PATTERN_DEFAULTS.map(x=>({...x}));let WOS={};
 let STEPMASTER=STEP_DEFAULTS.map(x=>({...x}));
@@ -651,30 +654,28 @@ function wizStep3(j,flags){
   $('#wizBox').innerHTML=`<h2>${esc(j.job_id)} — แผนทั้งเส้น (แก้วัน/ซัพได้)</h2>
     <div id="wPlan">${plan.map((m,i)=>`
       <div class="ms" data-i="${i}" data-mkey="${esc(m.mkey)}">
-        <span class="updown"><button class="mv" data-d="-1">▲</button><button class="mv" data-d="1">▼</button></span>
+        <span class="dragH" title="ลากเพื่อสลับลำดับ">⠿</span>
         <span style="width:14px;text-align:center;color:${MCOLOR[m.mkey]||'#999'}">●</span>
         <span class="lb">${esc(m.label)}</span>
         ${supSelect('sup',m.supplier)}
         <input type="date" value="${m.plan_date||''}">
         <button class="del">✕</button></div>`).join('')}
     </div>
-    <p style="font-size:11.5px;color:var(--ink-3);margin:2px 0 8px">▲▼ สลับลำดับได้ตามหน้างานจริง · เลือกซัพจาก dropdown หรือ "อื่นๆ" เพื่อเพิ่มใหม่</p>
+    <p style="font-size:11.5px;color:var(--ink-3);margin:2px 0 8px">จับ ⠿ ลากสลับลำดับได้ตามหน้างานจริง · เลือกซัพจาก dropdown หรือ "อื่นๆ" เพื่อเพิ่มใหม่</p>
     <button class="btn2" id="wAdd" style="margin:4px 0 10px">＋ เพิ่มขั้นเอง</button>
     <div style="display:flex;gap:8px;justify-content:space-between">
       <button class="btn2" id="wBack2">← กลับ</button>
       <button class="btnG" id="wSave">✔ เปิดงานเข้าบอร์ด</button></div>`;
   const wire=()=>{
     $$('#wPlan .del').forEach(b=>b.onclick=()=>b.parentElement.remove());
-    $$('#wPlan .mv').forEach(b=>b.onclick=()=>{const row=b.closest('.ms');
-      if(b.dataset.d==='-1'&&row.previousElementSibling)row.parentElement.insertBefore(row,row.previousElementSibling);
-      if(b.dataset.d==='1'&&row.nextElementSibling)row.parentElement.insertBefore(row.nextElementSibling,row);});
+    makeDrag($('#wPlan'),'.ms',null);
     $$('#wPlan select.sup').forEach(sel=>sel.onchange=()=>handleSupChange(sel,()=>{}));};
   wire();
   $('#wAdd').onclick=()=>{const d=document.createElement('div');d.className='ms';
     d.innerHTML=`<span style="width:18px;text-align:center;color:#999">●</span>
       <input class="lb" placeholder="ชื่อขั้น" style="flex:1;padding:4px 6px;border:1px solid var(--line);border-radius:6px;font-size:12.5px">
       ${supSelect('sup','')}<input type="date"><button class="del">✕</button>`;
-    d.innerHTML='<span class="updown"><button class="mv" data-d="-1">▲</button><button class="mv" data-d="1">▼</button></span>'+d.innerHTML;
+    d.innerHTML='<span class="dragH" title="ลากเพื่อสลับลำดับ">⠿</span>'+d.innerHTML;
     d.dataset.custom='1';$('#wPlan').appendChild(d);wire()};
   $('#wBack2').onclick=()=>wizStep2(j);
   $('#wSave').onclick=async()=>{
@@ -899,7 +900,7 @@ async function openDrawer(id){
       <div class="fld"><label>PIC</label><select id="pPic"><option value=""></option>${PICS.map(x=>`<option ${p.pic===x?'selected':''}>${x}</option>`).join('')}</select></div>
       <div class="fld"><label>Due ภายใน (กรอกเอง)</label><input type="date" id="pIDue" value="${p.internal_due||''}"></div>
       <div class="fld"><label>โน้ต</label><input id="pNote" value="${esc(p.note||'')}"></div></div>
-    <h4 style="margin:4px 0 8px;font-size:13.5px">📍 แผนงาน — ติ๊ก ✓ เมื่อขั้นนั้นเสร็จจริง</h4>
+    <h4 style="margin:4px 0 8px;font-size:13.5px">📍 แผนงาน — ติ๊ก ✓ เมื่อเสร็จจริง · จับ ⠿ ลากสลับลำดับ</h4>
     <div id="msList">${list.map(m=>msRow(m)).join('')||'<div style="color:var(--mut);font-size:12px">ยังไม่มีแผน — กดปุ่มด้านล่างเพื่อสร้าง</div>'}</div>
     <div style="display:flex;gap:8px;margin:6px 0 12px">
       <button class="btn2" id="msAdd">＋ เพิ่มขั้น</button>
@@ -961,7 +962,7 @@ async function openDrawer(id){
 function msRow(m){
   const overdue=!m.actual_date&&m.plan_date&&D(m.plan_date)<today();
   return `<div class="ms ${m.actual_date?'done':''} ${overdue?'overdue':''}" data-mid="${m.id}">
-    <span class="updown"><button class="mv" data-d="-1">▲</button><button class="mv" data-d="1">▼</button></span>
+    <span class="dragH" title="ลากเพื่อสลับลำดับ">⠿</span>
     <button class="chk">${m.actual_date?'✓':''}</button>
     <span class="lb">${esc(m.label)}${m.actual_date?`<small>เสร็จ ${thDate(m.actual_date)}</small>`:overdue?`<small>เลยแผน ${thDate(m.plan_date)}</small>`:''}</span>
     ${supSelect('sup',m.supplier||'')}
@@ -969,6 +970,13 @@ function msRow(m){
     <button class="del">✕</button></div>`;
 }
 function wireMs(id){
+  makeDrag($('#msList'),'.ms',async()=>{
+    const rows=[...$('#msList').querySelectorAll('.ms[data-mid]')];
+    for(let i=0;i<rows.length;i++){
+      const m=msOf(id).find(x=>''+x.id===rows[i].dataset.mid);
+      const want=(i+1)*10;
+      if(m&&m.sort!==want)await msPatch(id,m,{sort:want});}
+    render()});
   $$('#msList .ms').forEach(el=>{
     const mid=el.dataset.mid,m=msOf(id).find(x=>''+x.id===mid);
     el.querySelector('.chk').onclick=async()=>{
@@ -977,12 +985,6 @@ function wireMs(id){
       logEvent(id,m.label,m.actual_date||'',v?('เสร็จ '+v):'ยกเลิกติ๊ก');openDrawer(id);render()};
     el.querySelector('.pd').onchange=async e=>{await msPatch(id,m,{plan_date:e.target.value||null});render()};
     el.querySelector('select.sup').onchange=e=>handleSupChange(e.target,async v=>{await msPatch(id,m,{supplier:v});render()});
-    el.querySelectorAll('.mv').forEach(b=>b.onclick=async()=>{
-      const list=msOf(id),idx=list.indexOf(m),t=idx+(+b.dataset.d);
-      if(t<0||t>=list.length)return;
-      const other=list[t],s1=m.sort,s2=other.sort;
-      await msPatch(id,m,{sort:s2});await msPatch(id,other,{sort:s1});
-      openDrawer(id);render()});
     el.querySelector('.del').onclick=async()=>{
       if(DEMO){MS[id]=MS[id].filter(x=>x!==m)}else{await sb.from('milestones').delete().eq('id',m.id);MS[id]=MS[id].filter(x=>x.id!==m.id)}
       logEvent(id,'ลบขั้น',m.label,'');toast('เอาขั้น "'+m.label+'" ออกแล้ว');openDrawer(id);render()};
@@ -1097,6 +1099,22 @@ document.addEventListener('click',e=>{
   if(t.closest('#lightbox'))$('#lightbox').classList.remove('on');
 },true);
 
+/* ---- drag reorder (ลากทั้งแถว) ---- */
+function makeDrag(container,rowSel,onDrop){
+  if(!container)return;let drag=null;
+  [...container.querySelectorAll(rowSel)].forEach(r=>{
+    const h=r.querySelector('.dragH');if(!h)return;
+    h.style.cursor='grab';
+    h.onmousedown=()=>{r.draggable=true};
+    h.ontouchstart=()=>{r.draggable=true};
+    r.ondragstart=e=>{drag=r;r.classList.add('dragging');e.dataTransfer.effectAllowed='move'};
+    r.ondragend=()=>{r.draggable=false;r.classList.remove('dragging');const d=onDrop;drag=null;d&&d()};
+    r.ondragover=e=>{e.preventDefault();
+      if(drag&&drag!==r&&drag.parentElement===r.parentElement){
+        const rect=r.getBoundingClientRect();
+        const after=e.clientY>rect.top+rect.height/2;
+        r.parentElement.insertBefore(drag,after?r.nextSibling:r);}};
+  });}
 /* ================= work order (ใบสั่งผลิต) ================= */
 function guessPattern(name){name=(name||'').toLowerCase();
   if(/boxy|บ๊อก|บ็อก/.test(name))return'boxy';
@@ -1109,10 +1127,40 @@ function parseSizeQty(name){ // "M - 19 ตัว ... 3XL - 15 ตัว" -> {M:
   let m;while((m=re.exec(name||''))!==null)out[m[1].toUpperCase()]=(out[m[1].toUpperCase()]||0)+ +m[2];
   return out}
 function msPlan(id,keys){for(const k of keys){const m=msOf(id).find(x=>x.mkey===k);if(m&&m.plan_date)return m.plan_date}return null}
+const SHIRT_COLORS=[
+ {n:'ขาว',c:'#f4f4ef'},{n:'ครีม',c:'#efe6d0'},{n:'เทาอ่อน',c:'#c9c9c4'},{n:'เทาเข้ม',c:'#6f6f6a'},
+ {n:'ดำ',c:'#232323'},{n:'น้ำตาล',c:'#7a5236'},{n:'กรม',c:'#20304e'},{n:'ฟ้า',c:'#7fb3d9'},
+ {n:'เขียว',c:'#2f7a4c'},{n:'เขียวขี้ม้า',c:'#5c6238'},{n:'แดง',c:'#b8322f'},{n:'ส้ม',c:'#e0762e'},
+ {n:'เหลือง',c:'#e8c93e'},{n:'ชมพู',c:'#e8a7bb'},{n:'ม่วง',c:'#6d5390'}];
+function shirtSVG(pk,color){
+  color=color||'#f4f4ef';
+  const dark=(()=>{const h=color.replace('#','');const r=parseInt(h.substr(0,2),16),g=parseInt(h.substr(2,2),16),b=parseInt(h.substr(4,2),16);
+    return (r*.3+g*.6+b*.1)<110})();
+  const line=dark?'#00000055':'#00000022', fold=dark?'#ffffff22':'#00000012';
+  // proportions per pattern: [bodyW, bodyH, sleeveDrop]
+  const p={basic:[150,190,52],oversize:[186,196,70],boxy:[196,150,72],babytee:[118,128,34]}[pk]||[150,190,52];
+  const [bw,bh,sl]=p, cx=200;
+  const x1=cx-bw/2,x2=cx+bw/2,neckW=pk==='babytee'?46:56;
+  return `<svg viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg">
+    <g stroke="${line}" stroke-width="3" stroke-linejoin="round">
+      <path fill="${color}" d="M ${cx-neckW/2-14} 52
+        L ${x1} 66 L ${x1-58} ${66+sl} L ${x1-38} ${66+sl+34} L ${x1+8} ${66+sl+10}
+        L ${x1+8} ${66+bh} L ${x2-8} ${66+bh} L ${x2-8} ${66+sl+10}
+        L ${x2+38} ${66+sl+34} L ${x2+58} ${66+sl} L ${x2} 66 L ${cx+neckW/2+14} 52
+        Q ${cx} 84 ${cx-neckW/2-14} 52 Z"/>
+      <path fill="none" d="M ${cx-neckW/2-6} 55 Q ${cx} 80 ${cx+neckW/2+6} 55"/>
+      <line x1="${x1+8}" y1="${66+sl+10}" x2="${x1+8}" y2="${66+bh}" stroke="${fold}"/>
+      <line x1="${x2-8}" y1="${66+sl+10}" x2="${x2-8}" y2="${66+bh}" stroke="${fold}"/>
+    </g></svg>`}
+function woMainImg(w){ // photo url, or '' meaning tinted default shirt
+  if(w.main_image)return w.main_image;
+  if(w.main_image===''&&w._noPhoto)return'';
+  return imgOf(w.job_id)||'';}
 let WOCUR=null;
 function woDraft(id){
   const j=JOBS[id]||{},p=PROC[id]||{},ex=WOS[id];
-  if(ex)return {...ex,sizes:(ex.sizes||[]).map(x=>({...x})),extra_rows:ex.extra_rows||[],images:ex.images||[]};
+  if(ex)return {...ex,sizes:(ex.sizes||[]).map(x=>({...x})),extra_rows:ex.extra_rows||[],images:ex.images||[],
+    job_name:ex.job_name||j.name||'',shirt_color:ex.shirt_color||'#f4f4ef',main_image:ex.main_image??(imgOf(id)||'')};
   const pk=guessPattern(j.name),pat=PATTERNS.find(x=>x.pattern_key===pk);
   const sq=parseSizeQty(j.name);
   const sizes=(pat?pat.sizes:[]).map(x=>({size:x.size,chest_in:x.chest_in,len_in:x.len_in,qty:sq[x.size]??''}));
@@ -1122,7 +1170,8 @@ function woDraft(id){
     qty_total:guessQty(j.name),fabric_type:pat?pat.fabric_default:'',fabric_color:'',fabric_folds:'',fabric_kg:'',
     label_type:'ติดลาเบลตาไซส์มาตรฐานปกติ',screen_at:p.screen_shop||'',screen_method:(()=>{const t=j.tags||'';
       for(const x of ['DTF','DTG','Silkscreen','Silk Screen','Sublimation','ปัก','UV'])if(t.includes(x))return x;return''})(),
-    pack_method:'แพ็คแยก 1:1',lot_no:'',sewing_details:'',notes:'',extra_rows:[],images:[],
+    pack_method:'',lot_no:'',sewing_details:'',notes:'',extra_rows:[],images:[],
+    job_name:j.name||'',main_image:imgOf(id)||'',shirt_color:'#f4f4ef',
     d_fabric_in:msPlan(id,['fabric_in']),d_sew_done:msPlan(id,['sew_done']),
     d_deliver:msPlan(id,['back_in','queue_in'])||j.due_date||null};
 }
@@ -1135,18 +1184,33 @@ function renderWOForm(){
   const segBtn=p=>`<button data-p="${p.pattern_key}" class="${w.pattern_key===p.pattern_key?'on':''}">${esc(p.name.split(' (')[0])}</button>`;
   const f=(label,key,ph)=>`<div class="fld"><label>${label}</label><input class="wof" data-k="${key}" value="${esc(w[key]??'')}" placeholder="${ph||''}"></div>`;
   const d=(label,key)=>`<div class="fld"><label>${label}</label><input type="date" class="wod" data-k="${key}" value="${w[key]||''}"></div>`;
+  const issued=WOS[w.job_id];
   $('#woBox').innerHTML=`<h2>📄 ใบสั่งผลิต — ${esc(w.job_id)}</h2>
-    <div class="meta"><b>${esc(j.name||'')}</b></div>
+    ${issued?`<div class="meta" style="background:var(--warn-bg);color:var(--warn-ink)">⚠ ใบสั่งผลิตงานนี้เคยออกแล้ว (ล่าสุด ${new Date(issued.updated_at).toLocaleString('th-TH',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}${issued.created_by?' โดย '+esc(issued.created_by):''}) — การบันทึกคือแก้ใบเดิม ช่างที่ถือลิงก์จะเห็นตัวใหม่</div>`:''}
+    <div class="fld"><label>ชื่องานบนใบ (แก้ได้ ไม่กระทบชื่อในระบบ)</label>
+      <textarea class="wof" data-k="job_name" rows="2">${esc(w.job_name||'')}</textarea></div>
+    <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:10px">
+      <div id="woMain" style="width:120px;height:130px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface-2);flex:none"></div>
+      <div style="flex:1">
+        <div class="imgbtns">
+          <button class="btn2" id="woMainUp">📷 เปลี่ยนรูปหลัก</button>
+          ${w.main_image?'<button class="btn2" id="woMainDel">✕ ลบรูป (ใช้เสื้อสี default)</button>':''}
+          <input type="file" id="woMainFile" accept="image/*" style="display:none"></div>
+        <label style="font-size:11.5px;color:var(--ink-3);display:block;margin:8px 0 3px">ไม่มีรูป → ใช้เสื้อ default ของแพทเทิร์น เลือกสีได้:</label>
+        <div id="woColors" style="display:flex;gap:5px;flex-wrap:wrap">
+          ${SHIRT_COLORS.map(c=>`<button title="${c.n}" data-c="${c.c}" style="width:26px;height:26px;border-radius:50%;border:${w.shirt_color===c.c?'3px solid var(--accent)':'1px solid var(--line-2)'};background:${c.c};padding:0"></button>`).join('')}
+        </div></div></div>
     <div class="fld"><label>แพทเทิร์นเสื้อ (เลือกแล้วตารางไซส์ขึ้นเอง)</label>
       <div class="seg" id="woPat">${PATTERNS.map(segBtn).join('')}<button data-p="__custom" class="${w.pattern_key==='__custom'?'on':''}">พิเศษ</button></div></div>
-    <table class="woSizes"><tr><th>ไซส์</th><th>อก (นิ้ว)</th><th>ยาว (นิ้ว)</th><th>จำนวน (ตัว)</th><th></th></tr>
-      ${w.sizes.map((r,i)=>`<tr>
+    <table class="woSizes"><thead><tr><th></th><th>ไซส์</th><th>อก (นิ้ว)</th><th>ยาว (นิ้ว)</th><th>จำนวน (ตัว)</th><th></th></tr></thead><tbody id="woSizeBody">
+      ${w.sizes.map((r,i)=>`<tr data-i="${i}">
+        <td class="dragH" title="ลากเพื่อสลับลำดับ">⠿</td>
         <td><input class="sz" data-i="${i}" data-f="size" value="${esc(r.size)}"></td>
         <td><input class="sz" data-i="${i}" data-f="chest_in" value="${esc(r.chest_in??'')}"></td>
         <td><input class="sz" data-i="${i}" data-f="len_in" value="${esc(r.len_in??'')}"></td>
         <td><input data-i="${i}" data-f="qty" value="${esc(r.qty??'')}" inputmode="numeric"></td>
         <td><button class="del woDelRow" data-i="${i}" style="background:none;border:0;color:var(--line-2)">✕</button></td></tr>`).join('')}
-    </table>
+    </tbody></table>
     <button class="btn2" id="woAddRow" style="padding:4px 10px;font-size:12px">＋ เพิ่มไซส์</button>
     <span class="woTot" id="woTot"></span>
     ${w.pattern_key==='__custom'?`<div style="display:flex;gap:6px;margin:6px 0">
@@ -1174,7 +1238,12 @@ function renderWOForm(){
         <button class="btn2" id="woShare">🔗 copy ลิงก์ให้ช่าง</button>
         <button class="btn2" id="woPrev">🖨 พิมพ์</button>
         <button class="btnG" id="woSave">💾 บันทึกใบงาน</button></span></div>`;
-  wireWO();updWoTot();updSyncBar();
+  wireWO();updWoTot();updSyncBar();updWoMain();
+}
+function updWoMain(){
+  const w=WOCUR,el=$('#woMain');if(!el)return;
+  if(w.main_image)el.innerHTML=`<img src="${esc(w.main_image)}" style="width:100%;height:100%;object-fit:cover">`;
+  else el.innerHTML=shirtSVG(w.pattern_key,w.shirt_color);
 }
 function updWoTot(){const t=woSum(),g=parseInt(WOCUR.qty_total)||0;const el=$('#woTot');
   el.textContent=`รวม ${t.toLocaleString()} ตัว`+(g?` / จำนวนงาน ${g.toLocaleString()}`:'');
@@ -1197,6 +1266,13 @@ function wireWO(){
     renderWOForm()});
   $$('#woBox .woSizes input').forEach(el=>el.oninput=()=>{
     w.sizes[+el.dataset.i][el.dataset.f]=el.value;if(el.dataset.f==='qty')updWoTot()});
+  makeDrag($('#woSizeBody'),'tr',()=>{
+    const order=[...$('#woSizeBody').querySelectorAll('tr')].map(r=>w.sizes[+r.dataset.i]);
+    w.sizes=order;renderWOForm()});
+  $$('#woColors button').forEach(b=>b.onclick=()=>{w.shirt_color=b.dataset.c;renderWOForm()});
+  $('#woMainUp').onclick=()=>$('#woMainFile').click();
+  $('#woMainFile').onchange=e=>{if(e.target.files[0])woUploadMain(e.target.files[0])};
+  const md=$('#woMainDel');if(md)md.onclick=()=>{w.main_image='';renderWOForm()};
   $$('#woBox .woDelRow').forEach(b=>b.onclick=()=>{w.sizes.splice(+b.dataset.i,1);renderWOForm()});
   $('#woAddRow').onclick=()=>{w.sizes.push({size:'',chest_in:'',len_in:'',qty:''});renderWOForm()};
   $$('#woBox .wof').forEach(el=>el.oninput=()=>{w[el.dataset.k]=el.value;if(el.dataset.k==='qty_total')updWoTot()});
@@ -1229,6 +1305,21 @@ function wireWO(){
   $('#woPrev').onclick=async()=>{await saveWO(true);renderWOPrint(w);window.print()};
   $('#woSave').onclick=()=>saveWO(false);
 }
+async function woUploadMain(blob){
+  if(DEMO){toast('DEMO อยู่');return}
+  toast('อัพโหลดรูปหลัก...');
+  try{const bmp=await createImageBitmap(blob);
+    const sc=Math.min(1,1400/Math.max(bmp.width,bmp.height));
+    const cv=document.createElement('canvas');cv.width=bmp.width*sc;cv.height=bmp.height*sc;
+    cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);
+    const out=await new Promise(res=>cv.toBlob(res,'image/jpeg',.87));
+    const path=`wo/${WOCUR.job_id}/main_${Date.now()}.jpg`;
+    const {error}=await sb.storage.from('job-images').upload(path,out,{contentType:'image/jpeg',upsert:true});
+    if(error)throw error;
+    WOCUR.main_image=sb.storage.from('job-images').getPublicUrl(path).data.publicUrl;
+    renderWOForm();toast('เปลี่ยนรูปหลักแล้ว ✓');
+  }catch(e){toast('อัพโหลดไม่ได้: '+e.message)}
+}
 async function woUpload(blob){
   if(DEMO){toast('DEMO อยู่');return}
   toast('อัพโหลดรูป...');
@@ -1253,9 +1344,10 @@ async function saveWO(quiet){
   const row={...w,sizes:w.sizes.filter(r=>r.size),updated_at:new Date().toISOString(),created_by:w.created_by||cfg.who};
   if(!DEMO){const {error}=await sb.from('work_orders').upsert(row);
     if(error){toast(/find the table/.test(error.message)?'ต้องรัน migration-workorder.sql ใน Supabase ก่อน':'บันทึกไม่ได้: '+error.message);return}}
+  const was=WOS[w.job_id];
   WOS[w.job_id]=row;
-  if(!quiet){logEvent(w.job_id,'ใบสั่งผลิต','',`บันทึก (${row.sizes.length} ไซส์ รวม ${woSum()} ตัว)`);
-    toast('บันทึกใบงานแล้ว ✓')}
+  if(!quiet){logEvent(w.job_id,'ใบสั่งผลิต','',`${was?'แก้ใบเดิม':'ออกใบใหม่'} (${row.sizes.length} ไซส์ รวม ${woSum()} ตัว)`);
+    toast(was?'อัพเดทใบสั่งผลิตเดิมแล้ว ✓ (ใบนี้เคยออกไปก่อนหน้า)':'ออกใบสั่งผลิตแล้ว ✓')}
 }
 function cmOf(w,r,which){
   const pat=PATTERNS.find(x=>x.pattern_key===w.pattern_key);
@@ -1266,7 +1358,9 @@ function cmOf(w,r,which){
   return inch?(Math.round(inch*2.54*10)/10)+' ซม.':'';}
 function thFull(d){if(!d)return'-';const x=D(d);return `${String(x.getDate()).padStart(2,'0')}/${String(x.getMonth()+1).padStart(2,'0')}/${x.getFullYear()}`}
 function renderWOPrint(w){
-  const j=JOBS[w.job_id]||{},im=imgOf(w.job_id);
+  const j=JOBS[w.job_id]||{};
+  const im=w.main_image||'';
+  const imHtml=im?`<img src="${esc(im)}">`:`<div style="max-width:340px;margin:0 auto">${shirtSVG(w.pattern_key,w.shirt_color)}</div>`;
   const sizes=(w.sizes||[]).filter(r=>r.size&&(parseInt(r.qty)||0)>0);
   const useAll=sizes.length?sizes:(w.sizes||[]).filter(r=>r.size);
   const tot=(w.sizes||[]).reduce((s,r)=>s+(parseInt(r.qty)||0),0);
@@ -1275,10 +1369,10 @@ function renderWOPrint(w){
       <div>วันที่: ${thFull(iso(today()))}</div></div>
     <div class="wpBody">
       <div class="wpL">
-        <div class="wpRow"><div class="wpName"><b>ชื่องาน:</b> ${esc(j.name||'').slice(0,80)}<br><b>เลขงาน:</b> ${esc(w.job_id)}</div>
+        <div class="wpRow"><div class="wpName"><b>ชื่องาน:</b> ${esc(w.job_name||j.name||'').slice(0,120)}<br><b>เลขงาน:</b> ${esc(w.job_id)}</div>
           <div class="wpStyle"><small>แบบเสื้อ:</small>${esc(w.pattern_name||'-')}</div>
           <div class="wpQty">จำนวน:<br>${(w.qty_total||tot||0).toLocaleString()} ตัว</div></div>
-        <div class="wpImg">${im?`<img src="${esc(im)}">`:'<div style="padding:60px;color:#999">(ไม่มีรูป)</div>'}</div>
+        <div class="wpImg">${imHtml}<div style="font-size:11px;color:#555">${im?'':'ภาพตัวอย่างสี: '+((SHIRT_COLORS.find(c=>c.c===w.shirt_color)||{}).n||'')+' (เสื้อ default ตามแพทเทิร์น)'}</div></div>
         <table class="wpTbl"><tr><th>ไซส์</th>${useAll.map(r=>`<th>${esc(r.size)}</th>`).join('')}<th>รวม</th></tr>
           <tr><td><b>อก</b></td>${useAll.map(r=>`<td>${r.chest_in?esc(r.chest_in)+'"<div class="cm">'+cmOf(w,r,'chest')+'</div>':''}</td>`).join('')}<td rowspan="2" style="background:#f0f0f0"></td></tr>
           <tr><td><b>ยาว</b></td>${useAll.map(r=>`<td>${r.len_in?esc(r.len_in)+'"<div class="cm">'+cmOf(w,r,'len')+'</div>':''}</td>`).join('')}</tr>
