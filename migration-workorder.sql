@@ -40,7 +40,7 @@ insert into patterns(pattern_key,name,sku_ref,fabric_default,sort,sizes) values
 ('boxy','Boxy ไหล่ตก ครอป','2511GMT129','Cotton100% comb 20',30,
  '[{"size":"S","chest_in":42,"chest_cm":106.5,"len_in":25,"len_cm":63.5},
    {"size":"M","chest_in":46,"chest_cm":117,"len_in":25.5,"len_cm":65},
-   {"size":"L","chest_in":50,"chest_cm":120,"len_in":26,"len_cm":66},
+   {"size":"L","chest_in":50,"chest_cm":127,"len_in":26,"len_cm":66},
    {"size":"XL","chest_in":54,"chest_cm":137,"len_in":27,"len_cm":68.5}]'),
 ('babytee','Baby tee (MM04)','2508GMT099','Cotton100% comb 40 interlock',40,
  '[{"size":"S","chest_in":28,"chest_cm":71,"len_in":19,"len_cm":48.2},
