@@ -193,6 +193,22 @@ span.thumb.ph{display:inline-grid;place-items:center;color:var(--ink-3);font-siz
 .updown .mv:hover{color:var(--accent)}
 select.sup{width:112px;padding:5px;border:1px solid var(--line-2);border-radius:7px;font-size:11.5px;background:var(--surface)}
 .supsec{font-size:12px;font-weight:600;color:var(--ink-3);letter-spacing:.03em;text-transform:uppercase;padding:9px 14px 2px}
+.srow2{display:flex;align-items:center;gap:12px;padding:7px 14px;border-top:1px solid var(--surface-2);cursor:pointer}
+.srow2:hover{background:var(--surface-2)}
+.srow2 .thumb{width:56px;height:56px}
+.srow2 .sid{font-family:var(--font-display);font-weight:700;font-size:14px;width:86px;flex:none}
+.srow2 .smain{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
+.srow2 .snm{display:block;font-size:13px;color:var(--ink);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.srow2 .swait{display:block;font-size:11.5px;color:var(--ink-3);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.srow2 .sstep{flex:none;width:150px;text-align:left}
+.srow2 .sdate{flex:none;width:52px;font-size:13px;color:var(--ink-2);text-align:right}
+.srow2 .sst{flex:none;width:96px;text-align:right}
+.pill.stp{font-weight:600;font-size:11.5px}
+.pill.stp.f{background:#8e6cc01c;color:var(--fab)}
+.pill.stp.s{background:#2d8fb01c;color:var(--sew)}
+.pill.stp.c{background:#d07a2f1f;color:var(--scr)}
+.pill.stp.o{background:var(--surface-3);color:var(--ink-2)}
+.supbox{max-width:980px}
 @media (max-width:720px){
   header{padding:8px 10px}header h1{font-size:16px}header h1 .sub{display:none}
   .tabs button{padding:6px 9px;font-size:12.5px}
@@ -855,19 +871,20 @@ function renderSup(ids){
       ...(nowItems.length?['— งานที่อยู่กับคุณตอนนี้ ('+nowItems.length+') —',...nowItems.map(line)]:[]),
       ...(inItems.length?['— งานที่กำลังจะเข้า ('+inItems.length+') —',...inItems.map(line)]:[]),
       'รบกวนอัพเดทด้วยครับ 🙏'].join('\n');
+    const stepCls=k=>({fabric_pay:'f',fabric_in:'f',stock_pick:'o',sew_done:'s',to_screen:'c',back_in:'c',queue_in:'c',ship:'o'})[k]||'o';
     const row=({id,m,now,waitOn})=>{const dl=m.plan_date?Math.round((D(m.plan_date)-today())/864e5):null;
-      return `<tr data-id="${esc(id)}" style="cursor:pointer"><td class="tdimg">${thumb(id)}</td><td><b>${esc(id)}</b></td>
-        <td>${esc((JOBS[id]?.name||'').slice(0,42))}</td><td>${esc(m.label)}</td>
-        <td>${now?'':waitOn?`<span class="pill muted">รอ ${esc(waitOn.label)}${waitOn.supplier?' @'+esc(waitOn.supplier):''}</span>`:''}</td>
-        <td>${m.plan_date?thDate(m.plan_date):'—'}</td>
-        <td>${dl===null?'<span class="pill muted">ไม่มีแผน</span>':dl<0?`<span class="pill late">เลท ${-dl} วัน</span>`:dl===0?'<span class="pill warn">วันนี้</span>':`<span class="pill ok">อีก ${dl} วัน</span>`}</td></tr>`};
+      return `<div class="srow2" data-id="${esc(id)}">${thumb(id)}
+        <span class="sid">${esc(id)}</span>
+        <span class="smain"><span class="snm">${esc(JOBS[id]?.name||'')}</span>
+          ${!now&&waitOn?`<span class="swait">⏳ รอ ${esc(waitOn.label)}${waitOn.supplier?' @'+esc(waitOn.supplier):''} ก่อน</span>`:''}</span>
+        <span class="sstep"><span class="pill stp ${stepCls(m.mkey)}">${esc(m.label)}</span></span>
+        <span class="sdate">${m.plan_date?thDate(m.plan_date):'—'}</span>
+        <span class="sst">${dl===null?'<span class="pill muted">ไม่มีแผน</span>':dl<0?`<span class="pill late">เลท ${-dl}</span>`:dl===0?'<span class="pill warn">วันนี้</span>':`<span class="pill ok">อีก ${dl} วัน</span>`}</span></div>`};
     return `<div class="supbox"><h2>🚚 ${esc(sup)}
       <span class="cnt">ตอนนี้ ${nowItems.length}</span><span class="cnt">🔜 จะเข้า ${inItems.length}</span>
       <span class="sp" style="flex:1"></span><button class="btn2" data-msg="${esc(msg)}">📋 copy ข้อความ LINE</button></h2>
-      ${nowItems.length?`<div class="supsec">งานที่อยู่กับซัพตอนนี้</div>
-      <table><tr><th></th><th>งาน</th><th>ชื่อ</th><th>ขั้น</th><th></th><th>กำหนด</th><th>สถานะ</th></tr>${nowItems.map(row).join('')}</table>`:''}
-      ${inItems.length?`<div class="supsec">🔜 งานที่กำลังจะเข้ามา (เตรียมคิวไว้)</div>
-      <table><tr><th></th><th>งาน</th><th>ชื่อ</th><th>ขั้น</th><th>ติดอะไรอยู่</th><th>กำหนด</th><th>สถานะ</th></tr>${inItems.map(row).join('')}</table>`:''}
+      ${nowItems.length?`<div class="supsec">งานที่อยู่กับซัพตอนนี้</div>${nowItems.map(row).join('')}`:''}
+      ${inItems.length?`<div class="supsec">🔜 งานที่กำลังจะเข้ามา (เตรียมคิวไว้)</div>${inItems.map(row).join('')}`:''}
       </div>`};
   $('#supWrap').innerHTML=Object.entries(bySup).map(([s,it])=>box(s,it)).join('')+
     (noSup.length?`<div class="supbox"><h2>⚠ ขั้นถัดไปยังไม่ระบุซัพ (${noSup.length})</h2><table>
@@ -875,7 +892,7 @@ function renderSup(ids){
     '<div style="color:var(--mut);padding:20px">ไม่มีงานค้างกับซัพ</div>';
   $$('#supWrap [data-msg]').forEach(b=>b.onclick=e=>{e.stopPropagation();
     navigator.clipboard.writeText(b.dataset.msg).then(()=>toast('copy แล้ว — วางใน LINE ได้เลย'))});
-  $$('#supWrap tr[data-id]').forEach(r=>r.onclick=()=>openDrawer(r.dataset.id));
+  $$('#supWrap .srow2[data-id],#supWrap tr[data-id]').forEach(r=>r.onclick=()=>openDrawer(r.dataset.id));
 }
 
 /* ============ drawer ============ */
