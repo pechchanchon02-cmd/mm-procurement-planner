@@ -871,7 +871,7 @@ function renderSup(ids){
   const box=(sup,items)=>{
     const srt=a=>a.sort((x,y)=>((x.m.plan_date||'9999')>(y.m.plan_date||'9999'))?1:-1);
     const nowItems=srt(items.filter(x=>x.now)),inItems=srt(items.filter(x=>!x.now));
-    const line=({id,m})=>`• ${id} ${(JOBS[id]?.name||'').slice(0,40)} — ${m.label}${m.plan_date?' กำหนด '+thDate(m.plan_date):''}`;
+    const line=({id,m})=>`• ${id} — ${m.label}${m.plan_date?' กำหนด '+thDate(m.plan_date):''}`;
     const msg=[`สวัสดีครับ ${sup} อัพเดทงาน ${new Date().toLocaleDateString('th-TH',{day:'numeric',month:'short'})}`,
       ...(nowItems.length?['— งานที่อยู่กับคุณตอนนี้ ('+nowItems.length+') —',...nowItems.map(line)]:[]),
       ...(inItems.length?['— งานที่กำลังจะเข้า ('+inItems.length+') —',...inItems.map(line)]:[]),
