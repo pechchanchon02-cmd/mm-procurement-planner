@@ -433,12 +433,22 @@ let PATTERNS=PATTERN_DEFAULTS.map(x=>({...x}));let WOS={};
 let STEPMASTER=STEP_DEFAULTS.map(x=>({...x}));
 let SUPPLIERS=['TSK','ช่างเสือ','ช่างขวัญ','ช่างศักดิ์','คลัง'];
 let SUPALIAS={};   // alias(normalized) -> canonical  (มาจาก suppliers.aliases + ชื่อ canonical เอง)
+let SUPCODE={};    // share_code -> canonical name (ลิงก์ลับประจำซัพ)
 const normSup=n=>(n||'').trim().toLowerCase().replace(/^(พี่|ช่าง|ลุง|ป้า|น้า|ร้าน|คุณ)\s*/,'');
 function buildSupAlias(rows){SUPALIAS={};
   rows.forEach(r=>{const cn=r.name;
     SUPALIAS[normSup(cn)]=cn;
     (r.aliases||'').split(',').map(x=>x.trim()).filter(Boolean).forEach(a=>SUPALIAS[normSup(a)]=cn)})}
 function canonSup(n){if(!n)return n;return SUPALIAS[normSup(n)]||n.trim()}
+function supLink(name){const cn=canonSup(name);
+  const code=Object.keys(SUPCODE).find(c=>SUPCODE[c]===cn);
+  return location.origin+location.pathname+(code?'?s='+code:'?sup='+encodeURIComponent(cn))}
+async function provisionSupCodes(rows){ // เจ้าไหนยังไม่มีรหัสลับ สุ่มให้อัตโนมัติ
+  for(const r of rows){ if(r.share_code)continue;
+    const c=Math.random().toString(36).slice(2,8);
+    const {error}=await sb.from('suppliers').update({share_code:c}).eq('name',r.name);
+    if(error){console.warn('share_code:',error.message);return} // คอลัมน์ยังไม่ถูกเพิ่ม → ใช้ลิงก์แบบชื่อไปก่อน
+    r.share_code=c;SUPCODE[c]=r.name}}
 function stepOf(k){return STEPMASTER.find(x=>x.mkey===k)||{label:k,default_supplier:''}}
 function supSelect(cls,val){
   const opts=[...new Set([...SUPPLIERS,...(val?[val]:[])])];
@@ -540,7 +550,9 @@ async function loadAll(){
     sb.from('patterns').select('*'),sb.from('work_orders').select('*')]);
   if(pat&&pat.length)PATTERNS=pat.sort((a,b)=>(a.sort||0)-(b.sort||0));
   WOS={};(wos||[]).forEach(w=>WOS[w.job_id]=w);
-  if(sup&&sup.length){SUPPLIERS=sup.map(x=>x.name);buildSupAlias(sup)}
+  if(sup&&sup.length){SUPPLIERS=sup.map(x=>x.name);buildSupAlias(sup);
+    SUPCODE={};sup.forEach(r=>{if(r.share_code)SUPCODE[r.share_code]=r.name});
+    provisionSupCodes(sup)}
   if(sm&&sm.length)STEPMASTER=sm.sort((a,b)=>a.sort-b.sort);
   JOBS={};(js||[]).forEach(j=>JOBS[j.job_id]=j);
   PROC={};(ps||[]).forEach(p=>PROC[p.job_id]=p);
@@ -550,6 +562,11 @@ async function loadAll(){
   if(wp){const w=WOS[wp];if(w){document.body.classList.add('woview');renderWOPrint(w)}else toast('ไม่พบใบงาน '+wp)}
   const spv=new URLSearchParams(location.search).get('sup');
   if(spv)renderSupShare(spv);
+  const sc=new URLSearchParams(location.search).get('s');
+  if(sc){const nm=SUPCODE[sc];
+    if(nm)renderSupShare(nm);
+    else{document.body.classList.add('supview');
+      $('#woPrint').innerHTML='<div style="padding:50px 20px;text-align:center;color:var(--mut);font-size:15px">ไม่พบหน้านี้ครับ — ลิงก์อาจถูกยกเลิกแล้ว<br>ติดต่อทีม MerchMaker เพื่อขอลิงก์ใหม่</div>'}}
   refreshRaw();   // เติม/อัพเดทข้อมูลงานจากชีท raw เบื้องหลัง (งานที่เปิดก่อน raw มา จะได้ข้อมูลตามทีหลัง)
 }
 async function refreshRaw(){
@@ -910,7 +927,7 @@ function renderSup(ids){
     const msg=[`สวัสดีครับ ${sup} อัพเดทงาน ${new Date().toLocaleDateString('th-TH',{day:'numeric',month:'short'})}`,
       ...(nowItems.length?['— งานที่อยู่กับคุณตอนนี้ ('+nowItems.length+') —',...nowItems.map(line)]:[]),
       ...(inItems.length?['— งานที่กำลังจะเข้า ('+inItems.length+') —',...inItems.map(line)]:[]),
-      'ดูรายการงาน + เปิดใบสั่งผลิตได้ที่ '+location.origin+location.pathname+'?sup='+encodeURIComponent(sup),
+      'ดูรายการงาน + เปิดใบสั่งผลิตได้ที่ '+supLink(sup),
       'รบกวนอัพเดทด้วยครับ 🙏'].join('\n');
     const stepCls=k=>({fabric_pay:'f',fabric_in:'f',stock_pick:'o',sew_done:'s',to_screen:'c',back_in:'c',queue_in:'c',ship:'o'})[k]||'o';
     const row=({id,m,now,waitOn})=>{const dl=m.plan_date?Math.round((D(m.plan_date)-today())/864e5):null;
@@ -924,7 +941,7 @@ function renderSup(ids){
         ${WOS[id]?`<a class="swo" href="?wo=${encodeURIComponent(id)}" target="_blank" title="เปิดใบสั่งผลิต">📄</a>`:'<span class="swo off"></span>'}</div>`};
     return `<div class="supbox"><h2>🚚 ${esc(sup)}
       <span class="cnt">ตอนนี้ ${nowItems.length}</span><span class="cnt">🔜 จะเข้า ${inItems.length}</span>
-      <span class="sp" style="flex:1"></span><button class="btn2" data-msg="${esc(msg)}">📋 copy ข้อความ LINE</button></h2>
+      <span class="sp" style="flex:1"></span><button class="btn2 slink" data-s="${esc(sup)}" title="ลิงก์ลับเฉพาะเจ้านี้ ช่างเซฟเปิดดูงานตัวเองได้ตลอด">🔗 copy ลิงก์ช่าง</button><button class="btn2" data-msg="${esc(msg)}">📋 copy ข้อความ LINE</button></h2>
       ${nowItems.length?`<div class="supsec">งานที่อยู่กับซัพตอนนี้</div>${nowItems.map(row).join('')}`:''}
       ${inItems.length?`<div class="supsec">🔜 งานที่กำลังจะเข้ามา (เตรียมคิวไว้)</div>${inItems.map(row).join('')}`:''}
       </div>`};
@@ -934,6 +951,8 @@ function renderSup(ids){
     '<div style="color:var(--mut);padding:20px">ไม่มีงานค้างกับซัพ</div>';
   $$('#supWrap [data-msg]').forEach(b=>b.onclick=e=>{e.stopPropagation();
     navigator.clipboard.writeText(b.dataset.msg).then(()=>toast('copy แล้ว — วางใน LINE ได้เลย'))});
+  $$('#supWrap .slink').forEach(b=>b.onclick=e=>{e.stopPropagation();
+    navigator.clipboard.writeText(supLink(b.dataset.s)).then(()=>toast('copy ลิงก์ของ '+b.dataset.s+' แล้ว — ส่งใน LINE ให้ช่างเซฟไว้เปิดดูได้เลย'))});
   $$('#supWrap .srow2[data-id],#supWrap tr[data-id]').forEach(r=>r.onclick=()=>openDrawer(r.dataset.id));
   $$('#supWrap a.swo').forEach(a=>a.onclick=e=>e.stopPropagation());
 }
