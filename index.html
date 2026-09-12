@@ -195,6 +195,11 @@ span.thumb.ph{display:inline-grid;place-items:center;color:var(--ink-3);font-siz
 .updown .mv:hover{color:var(--accent)}
 select.sup{width:112px;padding:5px;border:1px solid var(--line-2);border-radius:7px;font-size:11.5px;background:var(--surface)}
 .supsec{font-size:12px;font-weight:600;color:var(--ink-3);letter-spacing:.03em;text-transform:uppercase;padding:9px 14px 2px}
+.ms .lb small.bl{color:#b5820a}
+.ktab{width:100%;border-collapse:collapse;font-size:13px}
+.ktab th{text-align:left;font-size:11.5px;color:var(--ink-3);font-weight:600;padding:9px 14px 4px;border-bottom:1px solid var(--line)}
+.ktab td{padding:8px 14px;border-top:1px solid var(--surface-2)}
+.ktab tbody tr:hover{background:var(--surface-2)}
 .srow2{display:flex;align-items:center;gap:12px;padding:7px 14px;border-top:1px solid var(--surface-2);cursor:pointer}
 .srow2:hover{background:var(--surface-2)}
 .srow2 .thumb{width:56px;height:56px}
@@ -333,6 +338,7 @@ body.supview #woPrint{display:block;max-width:820px;margin:0 auto;padding:14px}
     <button data-v="cal">ปฏิทิน</button>
     <button data-v="gantt">Timeline</button>
     <button data-v="sup">ซัพพลายเออร์ <span class="badge zero" id="nSup">0</span></button>
+    <button data-v="kpi">KPI</button>
   </nav>
   <span class="sp"></span>
   <button class="btnG" id="bNew">＋ เปิดงาน</button>
@@ -356,6 +362,7 @@ body.supview #woPrint{display:block;max-width:820px;margin:0 auto;padding:14px}
   </div>
   <div id="ganttWrap"></div>
   <div id="supWrap"></div>
+  <div id="kpiWrap"></div>
 </main>
 
 <div id="ovl"></div>
@@ -749,13 +756,17 @@ function wizStep3(j,flags){
     d.dataset.custom='1';$('#wPlan').appendChild(d);wire()};
   $('#wBack2').onclick=()=>wizStep2(j);
   $('#wSave').onclick=async()=>{
+    const oldBl={};msOf(j.job_id).forEach(m=>{   // เปิดงานซ้ำ → แผนแรกเดิมต้องไม่ถูกรีเซ็ต
+      if(m.baseline_date)oldBl[m.mkey==='custom'?'c:'+m.label:m.mkey]=m.baseline_date});
     const rows=$$('#wPlan .ms').map((el,i)=>{
       const custom=el.dataset.custom==='1';
       const label=custom?el.querySelector('input.lb').value.trim():el.querySelector('.lb').textContent;
       if(!label)return null;
+      const pd=el.querySelector('input[type=date]').value||null;
       return {job_id:j.job_id,mkey:custom?'custom':el.dataset.mkey||'custom',label,
         supplier:(el.querySelector('select.sup').value||'').trim()||null,
-        plan_date:el.querySelector('input[type=date]').value||null,actual_date:null,sort:(i+1)*10};
+        plan_date:pd,baseline_date:oldBl[custom?'c:'+label:(el.dataset.mkey||'custom')]||pd,
+        actual_date:null,sort:(i+1)*10};
     }).filter(Boolean);
     if(DEMO){JOBS[j.job_id]=JOBS[j.job_id]||j;PROC[j.job_id]={job_id:j.job_id,...flags,pic:flags.pic,tracked:true};
       MS[j.job_id]=rows.map((r,i)=>({...r,id:'d'+i}));$('#wiz').classList.remove('on');render();return}
@@ -765,7 +776,9 @@ function wizStep3(j,flags){
       await sb.from('procurement').upsert({job_id:j.job_id,need_fabric:flags.need_fabric,
         need_sewing:flags.need_sewing,screen_where:flags.screen_where,pic:flags.pic,tracked:true});
       await sb.from('milestones').delete().eq('job_id',j.job_id);
-      const {error}=await sb.from('milestones').insert(rows);
+      let {error}=await sb.from('milestones').insert(rows);
+      if(error&&/baseline_date/.test(error.message))   // ยังไม่ได้รัน SQL เพิ่มคอลัมน์ → บันทึกแบบไม่มี baseline ไปก่อน
+        ({error}=await sb.from('milestones').insert(rows.map(({baseline_date,...r})=>r)));
       if(error)throw error;
       logEvent(j.job_id,'เปิดงาน','',`${rows.length} ขั้น · ${flags.need_fabric?'ผ้าใหม่':''} ${flags.need_sewing?'เย็บใหม่':''} สกรีน${flags.screen_where}`);
       $('#wiz').classList.remove('on');toast('เปิดงานแล้ว ✓');loadAll();
@@ -824,11 +837,12 @@ function render(){
   $$('#kpis .kpi').forEach(el=>el.onclick=()=>{const k=el.dataset.k;
     filt.kpi=(k&&filt.kpi!==k)?k:'';render()});
   $('#kpis').style.display=view==='running'?'grid':'none';
-  ['running','calWrap','ganttWrap','supWrap'].forEach(x=>$('#'+x).style.display='none');
+  ['running','calWrap','ganttWrap','supWrap','kpiWrap'].forEach(x=>$('#'+x).style.display='none');
   if(view==='running'){$('#running').style.display='grid';renderRunning(ids)}
   if(view==='cal'){$('#calWrap').style.display='block';renderCal(ids)}
   if(view==='gantt'){$('#ganttWrap').style.display='block';renderGantt(ids)}
   if(view==='sup'){$('#supWrap').style.display='block';renderSup(ids)}
+  if(view==='kpi'){$('#kpiWrap').style.display='block';renderKPI()}
 }
 function fillSel(q,arr,cur){const el=$(q);const first=el.options[0].outerHTML;
   el.innerHTML=first+arr.map(x=>`<option ${x===cur?'selected':''}>${esc(x)}</option>`).join('')}
@@ -957,6 +971,57 @@ function renderSup(ids){
   $$('#supWrap a.swo').forEach(a=>a.onclick=e=>e.stopPropagation());
 }
 
+/* --- KPI: ส่งทันแผนแรกไหม (benchmark = baseline ตอนเปิดงาน) --- */
+let kpiMonth='all';
+function jobKpi(id){
+  const l=msOf(id);if(!l.length||!l.every(m=>m.actual_date))return null;   // นับเฉพาะงานจบครบทุกขั้น
+  const delivered=l.map(m=>m.actual_date).sort().slice(-1)[0];
+  const bench=l[l.length-1].baseline_date||JOBS[id]?.due_date||null;
+  return {delivered,bench,delta:bench?Math.round((D(delivered)-D(bench))/864e5):null};
+}
+function renderKPI(){
+  const rows=[];
+  Object.values(PROC).filter(p=>p.tracked!==false).forEach(p=>{
+    const k=jobKpi(p.job_id);if(!k)return;
+    rows.push({id:p.job_id,pic:p.pic||'(ไม่ระบุ)',...k})});
+  const months=[...new Set(rows.map(r=>r.delivered.slice(0,7)))].sort().reverse();
+  if(kpiMonth!=='all'&&!months.includes(kpiMonth))kpiMonth='all';
+  const use=rows.filter(r=>kpiMonth==='all'||r.delivered.slice(0,7)===kpiMonth);
+  const judged=use.filter(r=>r.delta!==null),noBench=use.length-judged.length;
+  const byPic={};judged.forEach(r=>(byPic[r.pic]=byPic[r.pic]||[]).push(r));
+  const mLabel=m=>{const [y,mo]=m.split('-');return D(m+'-01').toLocaleDateString('th-TH',{month:'long',year:'numeric'})};
+  const picRow=(pic,list)=>{
+    const on=list.filter(r=>r.delta<=0).length,late=list.filter(r=>r.delta>0);
+    const avg=late.length?Math.round(late.reduce((s,r)=>s+r.delta,0)/late.length*10)/10:0;
+    const pct=Math.round(on/list.length*100);
+    return `<tr><td><b>${esc(pic)}</b></td><td>${list.length}</td><td>${on}</td>
+      <td><b style="color:${pct>=80?'var(--good-ink)':pct>=60?'#b5820a':'var(--crit-ink)'}">${pct}%</b></td>
+      <td>${late.length?avg+' วัน':'—'}</td></tr>`};
+  const jobRow=r=>`<tr data-id="${esc(r.id)}" style="cursor:pointer">
+    <td><b>${esc(r.id)}</b></td><td>${esc(r.pic)}</td>
+    <td>${thDate(r.bench)}</td><td>${thDate(r.delivered)}</td>
+    <td>${r.delta<=0?`<span class="pill ok">✓ ทัน${r.delta<0?' (ก่อน '+(-r.delta)+' วัน)':''}</span>`:`<span class="pill late">✗ เลท ${r.delta} วัน</span>`}</td></tr>`;
+  $('#kpiWrap').innerHTML=`
+    <div class="supbox" style="padding:14px 16px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <h2 style="padding:0;background:none;font-size:16px">📈 KPI ส่งทันแผนแรก</h2>
+        <select id="kpiMon" style="padding:6px 9px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);font-size:12.5px">
+          <option value="all">ทุกช่วงเวลา</option>
+          ${months.map(m=>`<option value="${m}" ${m===kpiMonth?'selected':''}>${mLabel(m)}</option>`).join('')}
+        </select></div>
+      <p style="font-size:12px;color:var(--ink-3);margin:6px 0 0">วัดกับ 🔒 <b>แผนแรกตอนเปิดงาน</b> เท่านั้น — เลื่อนแผนระหว่างทางได้ปกติ ไม่กระทบตัววัด · นับเฉพาะงานที่ติ๊กครบทุกขั้นแล้ว${noBench?` · ${noBench} งานไม่มีแผนแรกให้เทียบ (เปิดก่อนมีระบบ)`:''}</p>
+    </div>
+    ${judged.length?`<div class="supbox" style="overflow-x:auto"><table class="ktab">
+      <thead><tr><th>ผู้รับผิดชอบ</th><th>งานจบ</th><th>ทันแผนแรก</th><th>%ทัน</th><th>เลทเฉลี่ย</th></tr></thead>
+      <tbody>${Object.entries(byPic).sort((a,b)=>b[1].length-a[1].length).map(([p,l])=>picRow(p,l)).join('')}</tbody></table></div>
+    <div class="supbox" style="overflow-x:auto"><div class="supsec">รายงาน (กดดูงานได้)</div><table class="ktab">
+      <thead><tr><th>เลขงาน</th><th>ผู้รับผิดชอบ</th><th>🔒 แผนแรก</th><th>ส่งจริง</th><th>ผล</th></tr></thead>
+      <tbody>${judged.sort((a,b)=>b.delivered<a.delivered?-1:1).map(jobRow).join('')}</tbody></table></div>`
+    :'<div style="color:var(--mut);padding:30px;text-align:center">ยังไม่มีงานจบครบทุกขั้นในช่วงที่เลือก</div>'}`;
+  $('#kpiMon').onchange=e=>{kpiMonth=e.target.value;renderKPI()};
+  $$('#kpiWrap tr[data-id]').forEach(r=>r.onclick=()=>openDrawer(r.dataset.id));
+}
+
 /* --- read-only supplier share page (?sup=ชื่อซัพ) --- */
 function renderSupShare(name){
   const cs=canonSup(name);
@@ -1026,7 +1091,8 @@ async function openDrawer(id){
       const sort=(msOf(id).slice(-1)[0]?.sort||0)+10;
       await msInsert({job_id:id,mkey:'custom',label,
         supplier:div.querySelector('select.sup').value||null,
-        plan_date:div.querySelector('.pd2').value||null,actual_date:null,sort});
+        plan_date:div.querySelector('.pd2').value||null,
+        baseline_date:div.querySelector('.pd2').value||null,actual_date:null,sort});
       logEvent(id,'เพิ่มขั้น','',label);openDrawer(id);render()};
     $('#msNewOk').onclick=doAdd;
     div.querySelector('.lb2').onkeydown=e=>{if(e.key==='Enter')doAdd();if(e.key==='Escape')div.remove()};
@@ -1065,7 +1131,7 @@ function msRow(m){
   return `<div class="ms ${m.actual_date?'done':''} ${overdue?'overdue':''}" data-mid="${m.id}">
     <span class="dragH" title="ลากเพื่อสลับลำดับ">⠿</span>
     <button class="chk">${m.actual_date?'✓':''}</button>
-    <span class="lb">${esc(m.label)}${m.actual_date?`<small>เสร็จ ${thDate(m.actual_date)}</small>`:overdue?`<small>เลยแผน ${thDate(m.plan_date)}</small>`:''}</span>
+    <span class="lb">${esc(m.label)}${m.actual_date?`<small>เสร็จ ${thDate(m.actual_date)}</small>`:overdue?`<small>เลยแผน ${thDate(m.plan_date)}</small>`:''}${m.baseline_date&&m.plan_date&&m.plan_date!==m.baseline_date?`<small class="bl" title="แผนแรกตอนเปิดงาน — ใช้วัด KPI เลื่อนไม่ได้">🔒 แผนแรก ${thDate(m.baseline_date)}</small>`:''}</span>
     ${supSelect('sup',m.supplier||'')}
     <input type="date" class="pd" title="วันแผน" value="${m.plan_date||''}">
     <button class="del">✕</button></div>`;
@@ -1097,7 +1163,9 @@ async function msPatch(id,m,patch){
 }
 async function msInsert(row){
   if(DEMO){(MS[row.job_id]=MS[row.job_id]||[]).push({...row,id:'d'+Math.random()});return}
-  const {data,error}=await sb.from('milestones').insert(row).select();
+  let {data,error}=await sb.from('milestones').insert(row).select();
+  if(error&&/baseline_date/.test(error.message)){
+    const {baseline_date,...r}=row;({data,error}=await sb.from('milestones').insert(r).select())}
   if(error){toast(error.message);return}
   (MS[row.job_id]=MS[row.job_id]||[]).push(data[0]);
 }
