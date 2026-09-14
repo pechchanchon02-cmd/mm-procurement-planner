@@ -795,6 +795,7 @@ function kpiMatch(id,k){
   if(k==='today')return !!n&&n.plan_date===iso(today());
   if(k==='noplan')return !!n&&!n.plan_date;
   if(k==='nowo')return !!(PROC[id]||{}).need_sewing&&!WOS[id]&&!jobDone(id);
+  if(k==='donly')return jobDone(id);
   return true}
 function visible(skipKpi){
   const s=(filt.q||'').toLowerCase();
@@ -821,13 +822,17 @@ function render(){
   const dueToday=baseIds.filter(id=>kpiMatch(id,'today')).length;
   const noPlan=baseIds.filter(id=>kpiMatch(id,'noplan')).length;
   const noWo=baseIds.filter(id=>kpiMatch(id,'nowo')).length;
+  const allIds=Object.values(PROC).filter(p=>p.tracked!==false).map(p=>p.job_id);
+  const doneCnt=allIds.filter(id=>jobDone(id)).length;
   const supPend=new Set();let supCnt=0;
   baseIds.forEach(id=>msOf(id).forEach(m=>{if(!m.actual_date&&m.supplier){supPend.add(m.supplier);supCnt++}}));
   $('#stat').textContent=filt.kpi?'กำลังกรอง — กดการ์ดตัวเลขซ้ำเพื่อดูทั้งหมด':'';
   $('#nRun').textContent=baseIds.length;$('#nRun').className='badge'+(late?'':' zero');
   $('#nSup').textContent=supCnt;$('#nSup').className='badge zero';
   $('#kpis').innerHTML=[
+    ['','งานทั้งหมด',allIds.length,''],
     ['','งานกำลังวิ่ง',baseIds.length,''],
+    ['good','จบแล้ว ✓',doneCnt,'donly'],
     ['crit','เลทแผน',late,'late'],
     ['warn','ครบกำหนดวันนี้',dueToday,'today'],
     ['in','ยังไม่ใส่วันแผน',noPlan,'noplan'],
@@ -835,7 +840,9 @@ function render(){
     ['good','ซัพที่มีงานค้าง',supPend.size,'']
   ].map(([c,k,v,f])=>`<div class="kpi ${c} ${f?'clickable':''} ${filt.kpi===f&&f?'active':''}" ${f?`data-k="${f}"`:'data-k=""'}><div class="k">${k}${f?' ▾':''}</div><div class="v">${v}</div></div>`).join('');
   $$('#kpis .kpi').forEach(el=>el.onclick=()=>{const k=el.dataset.k;
-    filt.kpi=(k&&filt.kpi!==k)?k:'';render()});
+    filt.kpi=(k&&filt.kpi!==k)?k:'';
+    if(k==='donly'){filt.done=filt.kpi==='donly';$('#fDone').checked=filt.done}   // กดการ์ดจบแล้ว = เปิดโชว์งานจบให้เอง
+    render()});
   $('#kpis').style.display=view==='running'?'grid':'none';
   ['running','calWrap','ganttWrap','supWrap','kpiWrap'].forEach(x=>$('#'+x).style.display='none');
   if(view==='running'){$('#running').style.display='grid';renderRunning(ids)}
