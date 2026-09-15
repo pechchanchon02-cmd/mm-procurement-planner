@@ -525,8 +525,33 @@ function health(id){ // green/amber/red by next milestone vs plan
   return dl<0?'late':dl<=1?'warn':'good';}
 
 /* ============ boot / cfg ============ */
-function boot(){ if(cfg.url&&cfg.key){sb=window.supabase.createClient(cfg.url,cfg.key);loadAll();
-    if(!cfg.who)askWho();} else openCfg() }
+async function boot(){ if(cfg.url&&cfg.key){sb=window.supabase.createClient(cfg.url,cfg.key);
+    if(await gateOK()){loadAll();if(!cfg.who)askWho()}} else openCfg() }
+async function gateOK(){ // รหัสทีมหน้าบอร์ด — ลิงก์ช่าง (?s/?wo/?sup) ไม่ต้องใส่
+  const qp=new URLSearchParams(location.search);
+  if(qp.get('s')||qp.get('wo')||qp.get('sup'))return true;
+  let pass=null;
+  try{const {data}=await sb.from('app_settings').select('value').eq('key','team_pass').single();
+    pass=data&&data.value}catch(e){}
+  if(!pass)return true;                       // ยังไม่ตั้งรหัสใน DB → เข้าได้ปกติ
+  if(cfg.gate===pass)return true;             // เครื่องนี้เคยใส่ถูกแล้ว จำไว้ให้
+  return new Promise(res=>{
+    const d=document.createElement('div');d.id='gateOvl';
+    d.style.cssText='position:fixed;inset:0;background:var(--page);z-index:70;display:flex;align-items:center;justify-content:center';
+    d.innerHTML=`<div class="box" style="width:320px;text-align:center">
+      <h2>🧵 Procurement Planner</h2>
+      <p style="font-size:12.5px;color:var(--ink-3);margin:4px 0 14px">ใส่รหัสทีมเพื่อเข้าบอร์ด (ใส่ครั้งเดียว เครื่องนี้จำไว้ให้)</p>
+      <input id="gateIn" type="password" inputmode="text" placeholder="รหัสทีม" style="width:100%;padding:10px 12px;border:1px solid var(--line-2);border-radius:9px;font-size:15px;text-align:center;background:var(--surface)">
+      <button class="btnG" id="gateGo" style="width:100%;margin-top:10px;justify-content:center">เข้าบอร์ด</button>
+      <div id="gateErr" style="font-size:12px;color:var(--crit-ink);margin-top:8px;visibility:hidden">รหัสไม่ถูกครับ ลองใหม่</div></div>`;
+    document.body.appendChild(d);
+    const go=()=>{const v=d.querySelector('#gateIn').value.trim();
+      if(v===pass){cfg.gate=pass;store.set(JSON.stringify(cfg));d.remove();res(true)}
+      else{d.querySelector('#gateErr').style.visibility='visible';d.querySelector('#gateIn').select()}};
+    d.querySelector('#gateGo').onclick=go;
+    d.querySelector('#gateIn').onkeydown=e=>{if(e.key==='Enter')go()};
+    d.querySelector('#gateIn').focus()});
+}
 function askWho(){
   const d=document.createElement('div');d.id='whoOvl';
   d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:60;display:flex;align-items:center;justify-content:center';
