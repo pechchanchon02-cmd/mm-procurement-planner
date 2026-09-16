@@ -219,6 +219,13 @@ select.sup{width:112px;padding:5px;border:1px solid var(--line-2);border-radius:
 .ibRow .pill{font-size:10.5px;padding:1px 7px}
 .ibRow .ibAct{flex:none;display:flex;gap:4px}
 .ibRow .ibAct button{padding:4px 8px;font-size:12px;border-radius:7px}
+.ibRow .ibMain{cursor:pointer}
+.ibRow.exp .ibMain b{-webkit-line-clamp:unset}
+.ibDet{padding:2px 0 10px;font-size:12.5px;border-bottom:1px dashed var(--line-2);margin-bottom:2px}
+.ibDet .txt{white-space:pre-wrap;line-height:1.5;margin-bottom:6px}
+.ibDet .btns{display:flex;gap:6px;flex-wrap:wrap}
+.ibDet .btns button{font-size:12px;padding:5px 10px}
+.ibDet input{padding:7px 9px;border:1px solid var(--line-2);border-radius:8px;font-size:12.5px;background:var(--surface)}
 .ms .lb small.bl{color:#b5820a}
 .ktab{width:100%;border-collapse:collapse;font-size:13px}
 .ktab th{text-align:left;font-size:11.5px;color:var(--ink-3);font-weight:600;padding:9px 14px 4px;border-bottom:1px solid var(--line)}
@@ -720,20 +727,35 @@ function ageTxt(ts){const mn=Math.max(1,Math.round((Date.now()-new Date(ts))/6e4
   return{t:'ค้าง '+Math.round(h/24)+' วัน',c:'late'}}
 const JOBID_RE=/^(MD|MDS|GSC|SAN|DNP)-?\d+$/i;
 const thTs=ts=>new Date(ts).toLocaleString('th-TH',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-let IBFORM=false;
+let IBFORM=false,IBEXP=null,IBEDIT=null;
 function renderInbox(){
   const el=$('#ibWrap');if(!el)return;
   const title=r=>`${r.job_id?esc(r.job_id)+(r.text?' — ':''):''}${esc(r.text||'')}`;
-  const rows=INBOX.map(r=>{const a=ageTxt(r.created_at);
-    return `<div class="ibRow">
-      <div class="ibMain"><b>${title(r)}</b>
-        <small>${esc(r.created_by||'?')} · ${thTs(r.created_at)} · <span class="pill ${a.c}">${a.t}</span></small></div>
-      <span class="ibAct">
-        ${r.job_id?`<button class="btnP ibOpen" data-i="${r.id}" title="เปิดงาน ${esc(r.job_id)}">▶ เปิด</button>`:''}
-        <button class="btn2 ibClr" data-i="${r.id}" title="เคลียร์ (จบ/รับทราบแล้ว)">✓</button></span></div>`}).join('');
-  const doneRows=INDONE.map(r=>`<div class="ibRow done">
-      <div class="ibMain"><b>${title(r)}</b>
-        <small>✓ รับโดย <b>${esc(r.done_by||'?')}</b> · ${thTs(r.done_at)}</small></div></div>`).join('');
+  const editBlk=r=>`<div class="ibDet">
+      <input id="ibeJob" placeholder="เลขงาน เช่น MD-1401" value="${esc(r.job_id||'')}" style="width:100%;margin-bottom:6px">
+      <input id="ibeTxt" placeholder="ดีเทล/หัวข้อ" value="${esc(r.text||'')}" style="width:100%;margin-bottom:8px">
+      <div class="btns"><button class="btnG ibeSave" data-i="${r.id}">💾 บันทึก</button>
+        <button class="btn2 ibeCancel">ยกเลิก</button></div></div>`;
+  const detBlk=r=>`<div class="ibDet">
+      <div class="txt">${esc(r.text||'(ไม่มีดีเทล)')}</div>
+      <div style="font-size:11px;color:var(--ink-3);margin-bottom:8px">เข้าโดย ${esc(r.created_by||'?')} · ${thTs(r.created_at)}${r.done_at?` · รับโดย ${esc(r.done_by||'?')} · ${thTs(r.done_at)}`:''}</div>
+      <div class="btns">
+        ${r.done_at?`<button class="btn2 ibBack" data-i="${r.id}">↩ ดึงกลับมารอรับ</button>`:`
+          <button class="btn2 ibEdit" data-i="${r.id}">✏️ แก้ไข</button>
+          ${r.job_id?`<button class="btnP ibOpen" data-i="${r.id}">▶ เปิดงาน ${esc(r.job_id)}</button>`
+                    :`<button class="btnP ibEdit" data-i="${r.id}" data-job="1">🔗 ใส่เลขงาน</button>`}
+          <button class="btn2 ibClr" data-i="${r.id}">✓ เคลียร์</button>`}
+      </div></div>`;
+  const row=(r,done)=>{
+    const exp=IBEXP===r.id,a=ageTxt(r.created_at);
+    return `<div class="ibRow ${done?'done':''} ${exp?'exp':''}">
+      <div class="ibMain" data-x="${r.id}" title="กดเพื่อดูดีเทล/แก้ไข"><b>${title(r)||'(ว่าง)'}</b>
+        <small>${done?`✓ รับโดย <b>${esc(r.done_by||'?')}</b> · ${thTs(r.done_at)}`:`${esc(r.created_by||'?')} · ${thTs(r.created_at)} · <span class="pill ${a.c}">${a.t}</span>`}</small></div>
+      ${!done&&!exp?`<span class="ibAct">
+        ${r.job_id?`<button class="btnP ibOpen" data-i="${r.id}" title="เปิดงาน">▶</button>`:''}
+        <button class="btn2 ibClr" data-i="${r.id}" title="เคลียร์">✓</button></span>`:''}
+      </div>
+      ${exp?(IBEDIT===r.id?editBlk(r):detBlk(r)):''}`};
   el.innerHTML=`<div class="supbox ibBox">
     <h2>📥 งานเข้า ${INBOX.length?`<span class="cnt" style="background:var(--warn-bg);color:var(--warn-ink)">${INBOX.length}</span>`:''}
       <span class="sp" style="flex:1"></span>
@@ -743,26 +765,47 @@ function renderInbox(){
       <input id="ibTxt" placeholder="ดีเทล/หัวข้อ เช่น เสื้อโปโลคุณบี ด่วน">
       <button class="btnG" id="ibAdd" style="justify-content:center">＋ ใส่เข้า inbox</button></div>`:''}
     <div class="ibList">
-      ${rows||'<div style="color:var(--mut);padding:8px 0;font-size:12.5px">ไม่มีงานรอรับ 🎉</div>'}
-      ${doneRows?`<div class="supsec" style="padding-left:0">จบแล้วล่าสุด</div>${doneRows}`:''}
+      ${INBOX.map(r=>row(r,false)).join('')||'<div style="color:var(--mut);padding:8px 0;font-size:12.5px">ไม่มีงานรอรับ 🎉</div>'}
+      ${INDONE.length?`<div class="supsec" style="padding-left:0">จบแล้วล่าสุด — กดเพื่อดู/ดึงกลับ</div>${INDONE.map(r=>row(r,true)).join('')}`:''}
     </div></div>`;
   $('#ibPlus').onclick=()=>{IBFORM=!IBFORM;renderInbox();if(IBFORM)$('#ibJob').focus()};
   const add=async()=>{
     const jb=$('#ibJob').value.trim(),tx=$('#ibTxt').value.trim();
     if(!jb&&!tx)return;
     if(DEMO){toast('DEMO อยู่');return}
-    const row={job_id:jb?(JOBID_RE.test(jb)?jb.toUpperCase():jb):null,text:tx,created_by:cfg.who};
-    const {data,error}=await sb.from('inbox').insert(row).select();
+    const row2={job_id:jb?(JOBID_RE.test(jb)?jb.toUpperCase():jb):null,text:tx,created_by:cfg.who};
+    const {data,error}=await sb.from('inbox').insert(row2).select();
     if(error){toast(error.message);return}
     INBOX.push(data[0]);IBFORM=false;renderInbox();toast('โยนเข้า inbox แล้ว ✓')};
   const fa=$('#ibAdd');if(fa){fa.onclick=add;
     ['#ibJob','#ibTxt'].forEach(q=>{$(q).onkeydown=e=>{if(e.key==='Enter')add()}})}
+  const find=id=>INBOX.find(x=>''+x.id===''+id)||INDONE.find(x=>''+x.id===''+id);
+  $$('#ibWrap .ibMain').forEach(m=>m.onclick=()=>{const id=+m.dataset.x;
+    IBEXP=IBEXP===id?null:id;IBEDIT=null;renderInbox()});
+  $$('#ibWrap .ibEdit').forEach(b=>b.onclick=e=>{e.stopPropagation();
+    IBEXP=+b.dataset.i;IBEDIT=+b.dataset.i;renderInbox();
+    (b.dataset.job?$('#ibeJob'):$('#ibeTxt'))?.focus()});
+  $$('#ibWrap .ibeCancel').forEach(b=>b.onclick=()=>{IBEDIT=null;renderInbox()});
+  $$('#ibWrap .ibeSave').forEach(b=>b.onclick=async()=>{const r=find(b.dataset.i);if(!r)return;
+    const jb=$('#ibeJob').value.trim(),tx=$('#ibeTxt').value.trim();
+    const patch={job_id:jb?(JOBID_RE.test(jb)?jb.toUpperCase():jb):null,text:tx};
+    if(!DEMO){const {error}=await sb.from('inbox').update(patch).eq('id',r.id);
+      if(error){toast(error.message);return}}
+    Object.assign(r,patch);IBEDIT=null;renderInbox();toast('แก้แล้ว ✓')});
   const clear=async id=>{const r=INBOX.find(x=>''+x.id===''+id);if(!r)return null;
     if(!DEMO)await sb.from('inbox').update({done_at:new Date().toISOString(),done_by:cfg.who}).eq('id',r.id);
     INBOX=INBOX.filter(x=>x!==r);r.done_at=new Date().toISOString();r.done_by=cfg.who;
     INDONE.unshift(r);INDONE=INDONE.slice(0,5);return r};
-  $$('#ibWrap .ibClr').forEach(b=>b.onclick=async()=>{await clear(b.dataset.i);renderInbox();toast('เคลียร์แล้ว ✓ (ดูย้อนได้ในโซนจบแล้ว)')});
-  $$('#ibWrap .ibOpen').forEach(b=>b.onclick=async()=>{const r=await clear(b.dataset.i);
+  $$('#ibWrap .ibClr').forEach(b=>b.onclick=async e=>{e.stopPropagation();
+    IBEXP=null;await clear(b.dataset.i);renderInbox();toast('เคลียร์แล้ว ✓ (ดึงกลับได้ในโซนจบแล้ว)')});
+  $$('#ibWrap .ibBack').forEach(b=>b.onclick=async()=>{const r=INDONE.find(x=>''+x.id===''+b.dataset.i);if(!r)return;
+    if(!DEMO){const {error}=await sb.from('inbox').update({done_at:null,done_by:null}).eq('id',r.id);
+      if(error){toast(error.message);return}}
+    r.done_at=null;r.done_by=null;INDONE=INDONE.filter(x=>x!==r);
+    INBOX.push(r);INBOX.sort((a,b2)=>a.created_at<b2.created_at?-1:1);
+    IBEXP=null;renderInbox();toast('ดึง "'+(r.job_id||r.text||'').slice(0,25)+'" กลับมารอรับแล้ว ↩')});
+  $$('#ibWrap .ibOpen').forEach(b=>b.onclick=async e=>{e.stopPropagation();
+    IBEXP=null;const r=await clear(b.dataset.i);
     renderInbox();if(r)wizStep1(r.job_id||r.text)});
 }
 
