@@ -200,6 +200,10 @@ select.sup{width:112px;padding:5px;border:1px solid var(--line-2);border-radius:
 .supcard:hover{border-color:var(--accent)}
 .supcard .scn{font-family:var(--font-display);font-weight:700;font-size:15px;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .supcard .scc{font-size:12.5px;color:var(--ink-2)}
+.ibBox{max-width:none;margin-bottom:14px}
+.ibForm{display:flex;gap:8px;flex-wrap:wrap;padding:4px 14px 10px}
+.ibForm input{padding:8px 10px;border:1px solid var(--line-2);border-radius:8px;font-size:13px;background:var(--surface)}
+.ibRow.done{opacity:.62}
 .ibRow{display:flex;align-items:center;gap:10px;padding:9px 4px;border-top:1px solid var(--surface-2)}
 .ibRow .ibMain{flex:1;min-width:0}
 .ibRow .ibMain b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -247,6 +251,9 @@ select.sup{width:112px;padding:5px;border:1px solid var(--line-2);border-radius:
   .srow2 .sdate{order:5;width:auto;text-align:left}
   .srow2 .sst{order:6;width:auto;text-align:left}
   .supbox h2{flex-wrap:wrap;row-gap:6px}
+  .ibRow{flex-wrap:wrap;row-gap:4px}
+  .ibRow .ibMain{flex:1 1 100%}
+  .ibForm input{flex:1 1 100%!important;width:auto!important}
   /* หน้าแชร์ให้ซัพ (?sup=) บนมือถือ */
   .ssRow{flex-wrap:wrap;gap:6px 12px}
   .ssRow img,.ssRow .ph2{width:72px;height:72px}
@@ -350,7 +357,6 @@ body.supview #woPrint{display:block;max-width:820px;margin:0 auto;padding:14px}
     <button data-v="kpi">KPI</button>
   </nav>
   <span class="sp"></span>
-  <button class="btn" id="bInbox">📥 งานเข้า <span class="badge zero" id="nInbox">0</span></button>
   <button class="btnG" id="bNew">＋ เปิดงาน</button>
   <button class="btn" id="bCfg">⚙</button>
 </header>
@@ -363,6 +369,7 @@ body.supview #woPrint{display:block;max-width:820px;margin:0 auto;padding:14px}
 </div>
 <main>
   <div id="kpis"></div>
+  <div id="ibWrap"></div>
   <div id="running"></div>
   <div id="calWrap">
     <div class="calhd"><button class="btn2" id="calPrev">‹</button><h2 id="calTitle"></h2><button class="btn2" id="calNext">›</button>
@@ -375,7 +382,6 @@ body.supview #woPrint{display:block;max-width:820px;margin:0 auto;padding:14px}
   <div id="kpiWrap"></div>
 </main>
 
-<div id="inboxPg"><div class="box" id="inboxBox"></div></div>
 <div id="ovl"></div>
 <div id="drawer">
   <div class="hd"><b id="dTitle">—</b><span class="sp"></span>
@@ -453,6 +459,7 @@ let SUPPLIERS=['TSK','ช่างเสือ','ช่างขวัญ','ช�
 let SUPALIAS={};   // alias(normalized) -> canonical  (มาจาก suppliers.aliases + ชื่อ canonical เอง)
 let SUPCODE={};    // share_code -> canonical name (ลิงก์ลับประจำซัพ)
 let INBOX=[];      // งานเข้า รอทีมกดเปิด
+let INDONE=[];     // งานเข้า ที่จบแล้ว (โชว์ท้ายกล่อง)
 let SUPSEL=null;   // ซัพที่เลือกดูใน view ซัพพลายเออร์ (null = หน้ารวม)
 const normSup=n=>(n||'').trim().toLowerCase().replace(/^(พี่|ช่าง|ลุง|ป้า|น้า|ร้าน|คุณ)\s*/,'');
 function buildSupAlias(rows){SUPALIAS={};
@@ -687,49 +694,63 @@ async function buildRawIndex(){
 }
 const iC_=2;
 
-/* ============ inbox: งานเข้า ============ */
+/* ============ inbox: งานเข้า (กล่องในหน้า Running) ============ */
 async function loadInbox(){ if(DEMO||!sb)return;
-  try{const {data,error}=await sb.from('inbox').select('*').is('done_at',null).order('created_at');
-    if(error)throw error;INBOX=data||[]}catch(e){INBOX=[]}
-  updInboxBadge();
-  if($('#inboxPg').classList.contains('on'))renderInbox();
+  try{
+    const [{data:pend,error:e1},{data:done}]=await Promise.all([
+      sb.from('inbox').select('*').is('done_at',null).order('created_at'),
+      sb.from('inbox').select('*').not('done_at','is',null).order('done_at',{ascending:false}).limit(10)]);
+    if(e1)throw e1;INBOX=pend||[];INDONE=done||[];
+  }catch(e){INBOX=[];INDONE=[]}
+  if(view==='running')renderInbox();
 }
-function updInboxBadge(){const el=$('#nInbox');el.textContent=INBOX.length;el.className='badge'+(INBOX.length?'':' zero')}
 function ageTxt(ts){const mn=Math.max(1,Math.round((Date.now()-new Date(ts))/6e4));
   if(mn<60)return{t:'ค้าง '+mn+' นาที',c:'ok'};
   const h=Math.round(mn/60);if(h<24)return{t:'ค้าง '+h+' ชม.',c:h>=4?'warn':'ok'};
   return{t:'ค้าง '+Math.round(h/24)+' วัน',c:'late'}}
 const JOBID_RE=/^(MD|MDS|GSC|SAN|DNP)-?\d+$/i;
+const thTs=ts=>new Date(ts).toLocaleString('th-TH',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
 function renderInbox(){
+  const el=$('#ibWrap');if(!el)return;
   const rows=INBOX.map(r=>{const a=ageTxt(r.created_at);
     return `<div class="ibRow">
-      <div class="ibMain"><b>${esc(r.text)}</b>
-        <small>โดย ${esc(r.created_by||'?')} · ${new Date(r.created_at).toLocaleString('th-TH',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</small></div>
+      <div class="ibMain"><b>${r.job_id?esc(r.job_id)+(r.text?' — ':''):''}${esc(r.text||'')}</b>
+        <small>โดย ${esc(r.created_by||'?')} · ${thTs(r.created_at)}</small></div>
       <span class="pill ${a.c}">${a.t}</span>
-      <button class="btnP ibOpen" data-i="${r.id}">▶ เปิดงาน</button>
-      <button class="btn2 ibClr" data-i="${r.id}" title="เคลียร์โดยไม่เปิดงาน">✓</button></div>`}).join('');
-  $('#inboxBox').innerHTML=`<h2>📥 งานเข้า</h2>
-    <p style="font-size:12px;color:var(--ink-3);margin:-6px 0 10px">โยนเลขงานไว้ให้ทีม — งานค้างอยู่ตรงนี้จนมีคนกด <b>▶ เปิดงาน</b> แล้วถึงเคลียร์ออกให้เอง</p>
-    <div style="display:flex;gap:8px;margin-bottom:10px">
-      <input id="ibIn" placeholder="พิมพ์เลขงาน เช่น MD-1401 แล้ว Enter" style="flex:1;padding:9px 11px;border:1px solid var(--line-2);border-radius:9px;font-size:14px;background:var(--surface)">
-      <button class="btnG" id="ibAdd">＋ ใส่</button></div>
-    <div>${rows||'<div style="color:var(--mut);padding:16px;text-align:center">ว่าง — ไม่มีงานค้างรอเปิด 🎉</div>'}</div>
-    <div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn2" id="ibClose">ปิด</button></div>`;
-  const add=async()=>{const t=$('#ibIn').value.trim();if(!t)return;$('#ibIn').value='';
+      ${r.job_id?`<button class="btnP ibOpen" data-i="${r.id}">▶ เปิดงาน</button>`:''}
+      <button class="btn2 ibClr" data-i="${r.id}" title="เคลียร์ (จบ/รับทราบแล้ว)">✓ เคลียร์</button></div>`}).join('');
+  const doneRows=INDONE.map(r=>`<div class="ibRow done">
+      <div class="ibMain"><b>${r.job_id?esc(r.job_id)+(r.text?' — ':''):''}${esc(r.text||'')}</b>
+        <small>รับโดย <b>${esc(r.done_by||'?')}</b> · ${thTs(r.done_at)} (เข้าโดย ${esc(r.created_by||'?')})</small></div>
+      <span class="pill ok">✓ จบ</span></div>`).join('');
+  el.innerHTML=`<div class="supbox ibBox">
+    <h2>📥 งานเข้า ${INBOX.length?`<span class="cnt" style="background:var(--warn-bg);color:var(--warn-ink)">รอรับ ${INBOX.length}</span>`:'<span class="cnt">ว่าง</span>'}</h2>
+    <div class="ibForm">
+      <input id="ibJob" placeholder="เลขงาน (ไม่จำได้ เว้นว่างได้)" style="width:190px">
+      <input id="ibTxt" placeholder="ดีเทล/หัวข้อ เช่น เสื้อโปโลคุณบี ด่วน ส่งศุกร์" style="flex:1;min-width:180px">
+      <button class="btnG" id="ibAdd">＋ ใส่เข้า</button></div>
+    <div style="padding:0 14px 8px">
+      ${rows||'<div style="color:var(--mut);padding:10px 0;font-size:13px">ไม่มีงานรอรับ 🎉 — พิมพ์โยนงานให้ทีมได้ข้างบน</div>'}
+      ${doneRows?`<div class="supsec" style="padding-left:0">จบแล้วล่าสุด</div>${doneRows}`:''}
+    </div></div>`;
+  const add=async()=>{
+    const jb=$('#ibJob').value.trim(),tx=$('#ibTxt').value.trim();
+    if(!jb&&!tx)return;
     if(DEMO){toast('DEMO อยู่');return}
-    const {data,error}=await sb.from('inbox').insert({text:JOBID_RE.test(t)?t.toUpperCase():t,created_by:cfg.who}).select();
-    if(error){toast(/find the table/.test(error.message)?'ต้องรัน SQL สร้างตาราง inbox ใน Supabase ก่อนครับ':error.message);return}
-    INBOX.push(data[0]);updInboxBadge();renderInbox();$('#ibIn').focus()};
-  $('#ibAdd').onclick=add;$('#ibIn').onkeydown=e=>{if(e.key==='Enter')add()};
-  $('#ibClose').onclick=()=>$('#inboxPg').classList.remove('on');
+    const row={job_id:jb?(JOBID_RE.test(jb)?jb.toUpperCase():jb):null,text:tx,created_by:cfg.who};
+    const {data,error}=await sb.from('inbox').insert(row).select();
+    if(error){toast(error.message);return}
+    INBOX.push(data[0]);renderInbox();$('#ibJob').focus()};
+  $('#ibAdd').onclick=add;
+  [['#ibJob'],['#ibTxt']].forEach(([q])=>{const i=$(q);if(i)i.onkeydown=e=>{if(e.key==='Enter')add()}});
   const clear=async id=>{const r=INBOX.find(x=>''+x.id===''+id);if(!r)return null;
     if(!DEMO)await sb.from('inbox').update({done_at:new Date().toISOString(),done_by:cfg.who}).eq('id',r.id);
-    INBOX=INBOX.filter(x=>x!==r);updInboxBadge();return r};
-  $$('#inboxBox .ibClr').forEach(b=>b.onclick=async()=>{await clear(b.dataset.i);renderInbox();toast('เคลียร์แล้ว ✓')});
-  $$('#inboxBox .ibOpen').forEach(b=>b.onclick=async()=>{const r=await clear(b.dataset.i);
-    $('#inboxPg').classList.remove('on');if(r)wizStep1(r.text)});
+    INBOX=INBOX.filter(x=>x!==r);r.done_at=new Date().toISOString();r.done_by=cfg.who;
+    INDONE.unshift(r);INDONE=INDONE.slice(0,10);return r};
+  $$('#ibWrap .ibClr').forEach(b=>b.onclick=async()=>{await clear(b.dataset.i);renderInbox();toast('เคลียร์แล้ว ✓ (ยังดูย้อนได้ในโซนจบแล้ว)')});
+  $$('#ibWrap .ibOpen').forEach(b=>b.onclick=async()=>{const r=await clear(b.dataset.i);
+    renderInbox();if(r)wizStep1(r.job_id||r.text)});
 }
-$('#bInbox').onclick=()=>{renderInbox();$('#inboxPg').classList.add('on')};
 
 /* ============ wizard: เปิดงาน ============ */
 $('#bNew').onclick=()=>wizStep1();
@@ -929,6 +950,8 @@ function render(){
     if(k==='donly'){filt.done=filt.kpi==='donly';$('#fDone').checked=filt.done}   // กดการ์ดจบแล้ว = เปิดโชว์งานจบให้เอง
     render()});
   $('#kpis').style.display=view==='running'?'grid':'none';
+  $('#ibWrap').style.display=view==='running'?'block':'none';
+  if(view==='running')renderInbox();
   ['running','calWrap','ganttWrap','supWrap','kpiWrap'].forEach(x=>$('#'+x).style.display='none');
   if(view==='running'){$('#running').style.display='grid';renderRunning(ids)}
   if(view==='cal'){$('#calWrap').style.display='block';renderCal(ids)}
