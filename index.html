@@ -1725,8 +1725,8 @@ function renderWOPrint(w){
   const j=JOBS[w.job_id]||{};
   const im=w.main_image||'';
   const imHtml=im?`<img src="${esc(im)}">`:`<div style="max-width:340px;margin:0 auto">${shirtSVG(w.pattern_key,w.shirt_color)}</div>`;
-  const sizes=(w.sizes||[]).filter(r=>r.size&&(parseInt(r.qty)||0)>0);
-  const useAll=sizes.length?sizes:(w.sizes||[]).filter(r=>r.size);
+  // โชว์ทุกไซส์ของแพทเทิร์นเสมอ ไซส์ที่ไม่สั่ง = 0 (ห้ามโดดไซส์ ช่างจะสับสน)
+  const useAll=(w.sizes||[]).filter(r=>r.size);
   const tot=(w.sizes||[]).reduce((s,r)=>s+(parseInt(r.qty)||0),0);
   $('#woPrint').innerHTML=`<div class="wp">
     <div class="wpHead"><h1>ใบสั่งผลิต <span class="by">Merchmaker by Giftwise Asia</span></h1>
@@ -1742,7 +1742,8 @@ function renderWOPrint(w){
         <table class="wpTbl"><tr><th>ไซส์</th>${useAll.map(r=>`<th>${esc(r.size)}</th>`).join('')}<th>รวม</th></tr>
           <tr><td><b>อก</b></td>${useAll.map(r=>`<td>${r.chest_in?esc(r.chest_in)+'"<div class="cm">'+cmOf(w,r,'chest')+'</div>':''}</td>`).join('')}<td rowspan="2" style="background:#f0f0f0"></td></tr>
           <tr><td><b>ยาว</b></td>${useAll.map(r=>`<td>${r.len_in?esc(r.len_in)+'"<div class="cm">'+cmOf(w,r,'len')+'</div>':''}</td>`).join('')}</tr>
-          <tr><td><b>จำนวน</b></td>${useAll.map(r=>`<td><b>${(parseInt(r.qty)||0)||''}</b></td>`).join('')}<td><b>${tot.toLocaleString()}</b></td></tr></table>
+          <tr><td><b>จำนวน</b></td>${useAll.map(r=>{const q=parseInt(r.qty)||0;
+            return `<td style="${q?'':'color:#b5b5b5;background:#fafafa'}"><b>${q}</b></td>`}).join('')}<td><b>${tot.toLocaleString()}</b></td></tr></table>
         <div class="wpRow"><div style="min-width:70px"><b>ลาเบล</b></div><div>${esc(w.label_type||'-')}</div></div>
       </div>
       <div class="wpR">
