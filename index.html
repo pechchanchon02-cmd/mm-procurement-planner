@@ -227,6 +227,8 @@ select.sup{width:112px;padding:5px;border:1px solid var(--line-2);border-radius:
 .ibDet .btns button{font-size:12px;padding:5px 10px}
 .ibDet input{padding:7px 9px;border:1px solid var(--line-2);border-radius:8px;font-size:12.5px;background:var(--surface)}
 .ms .lb small.bl{color:#b5820a}
+.ms .lbTxt{cursor:text;border-bottom:1px dashed transparent}
+.ms:hover .lbTxt{border-bottom-color:var(--line-2)}
 .ktab{width:100%;border-collapse:collapse;font-size:13px}
 .ktab th{text-align:left;font-size:11.5px;color:var(--ink-3);font-weight:600;padding:9px 14px 4px;border-bottom:1px solid var(--line)}
 .ktab td{padding:8px 14px;border-top:1px solid var(--surface-2)}
@@ -1319,7 +1321,7 @@ function msRow(m){
   return `<div class="ms ${m.actual_date?'done':''} ${overdue?'overdue':''}" data-mid="${m.id}">
     <span class="dragH" title="ลากเพื่อสลับลำดับ">⠿</span>
     <button class="chk">${m.actual_date?'✓':''}</button>
-    <span class="lb">${esc(m.label)}${m.actual_date?`<small>เสร็จ ${thDate(m.actual_date)}</small>`:overdue?`<small>เลยแผน ${thDate(m.plan_date)}</small>`:''}${m.baseline_date&&m.plan_date&&m.plan_date!==m.baseline_date?`<small class="bl" title="แผนแรกตอนเปิดงาน — ใช้วัด KPI เลื่อนไม่ได้">🔒 แผนแรก ${thDate(m.baseline_date)}</small>`:''}</span>
+    <span class="lb"><span class="lbTxt" title="กดเพื่อแก้ชื่อขั้น">${esc(m.label)}</span>${m.actual_date?`<small>เสร็จ ${thDate(m.actual_date)}</small>`:overdue?`<small>เลยแผน ${thDate(m.plan_date)}</small>`:''}${m.baseline_date&&m.plan_date&&m.plan_date!==m.baseline_date?`<small class="bl" title="แผนแรกตอนเปิดงาน — ใช้วัด KPI เลื่อนไม่ได้">🔒 แผนแรก ${thDate(m.baseline_date)}</small>`:''}</span>
     ${supSelect('sup',m.supplier||'')}
     <input type="date" class="pd" title="วันแผน" value="${m.plan_date||''}">
     <button class="del">✕</button></div>`;
@@ -1339,6 +1341,20 @@ function wireMs(id){
       await msPatch(id,m,{actual_date:v});
       logEvent(id,m.label,m.actual_date||'',v?('เสร็จ '+v):'ยกเลิกติ๊ก');openDrawer(id);render()};
     el.querySelector('.pd').onchange=async e=>{await msPatch(id,m,{plan_date:e.target.value||null});render()};
+    el.querySelector('.lbTxt').onclick=()=>{
+      if(el.querySelector('.lbEdit'))return;
+      const lt=el.querySelector('.lbTxt'),oldLb=m.label;
+      const inp=document.createElement('input');inp.className='lbEdit';inp.value=m.label;
+      inp.style.cssText='width:100%;max-width:220px;padding:4px 7px;border:1px solid var(--accent);border-radius:7px;font-size:13px;background:var(--surface)';
+      lt.replaceWith(inp);inp.focus();inp.select();
+      let fin=false;
+      const end=async save=>{if(fin)return;fin=true;
+        const v=inp.value.trim();
+        if(save&&v&&v!==oldLb){await msPatch(id,m,{label:v});
+          logEvent(id,'แก้ชื่อขั้น',oldLb,v);toast('เปลี่ยน "'+oldLb+'" → "'+v+'" ✓')}
+        openDrawer(id);render()};
+      inp.onkeydown=e=>{if(e.key==='Enter')end(true);if(e.key==='Escape')end(false)};
+      inp.onblur=()=>end(true);};
     el.querySelector('select.sup').onchange=e=>handleSupChange(e.target,async v=>{await msPatch(id,m,{supplier:v});render()});
     el.querySelector('.del').onclick=async()=>{
       if(DEMO){MS[id]=MS[id].filter(x=>x!==m)}else{await sb.from('milestones').delete().eq('id',m.id);MS[id]=MS[id].filter(x=>x.id!==m.id)}
