@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ภาระงานทีมจัดซื้อ — ข้อมูลจริงจากระบบ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap">
+<style>
+:root{color-scheme:light;
+--page:#f4f3ee;--surface:#fffffe;--surface-2:#f1f0ea;--surface-3:#e9e8e1;
+--ink:#17170f;--ink-2:#55544b;--ink-3:#8a897f;--line:#e3e2d9;--line-2:#cfcec4;
+--accent:#0f7480;--accent-ink:#0a5a64;--accent-soft:#d9eff1;
+--brand:#4C1F15;--brand-soft:#f3e4dc;--band:#fbe3c8;
+--good:#0ca30c;--good-bg:#e3f5e1;--good-ink:#0a5d0a;
+--warn:#fab219;--warn-bg:#fff1cf;--warn-ink:#7a5200;
+--crit:#d03b3b;--crit-bg:#fbe0e0;--crit-ink:#8f1f1f;
+--info-bg:#e4eefb;--info-ink:#1b4f8f;
+--fab:#8e6cc0;--sew:#2d8fb0;--scr:#d07a2f;--shp:#0ca30c;
+--shadow:0 1px 2px rgba(23,23,15,.06),0 8px 24px -12px rgba(23,23,15,.18);
+--r:12px;
+--font-ui:"IBM Plex Sans Thai","Segoe UI",Tahoma,system-ui,sans-serif;
+--font-display:"Anuphan","IBM Plex Sans Thai","Segoe UI",Tahoma,sans-serif;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;
+--page:#131311;--surface:#1d1d1a;--surface-2:#262622;--surface-3:#2f2f2a;
+--ink:#f2f1ea;--ink-2:#c2c1b5;--ink-3:#8f8e84;--line:#2e2e2a;--line-2:#3c3c37;
+--accent:#3fb3bf;--accent-ink:#7fd3dc;--accent-soft:#123b40;
+--brand:#d9a08c;--brand-soft:#3a2119;--band:#4a3520;
+--good-bg:#17331a;--good-ink:#8fdc8a;--warn-bg:#3d2f0a;--warn-ink:#f5c95a;
+--crit-bg:#3f1717;--crit-ink:#f19a9a;--info-bg:#17293f;--info-ink:#9cc4f5;
+--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);}}
+:root[data-theme="dark"]{color-scheme:dark;
+--page:#131311;--surface:#1d1d1a;--surface-2:#262622;--surface-3:#2f2f2a;
+--ink:#f2f1ea;--ink-2:#c2c1b5;--ink-3:#8f8e84;--line:#2e2e2a;--line-2:#3c3c37;
+--accent:#3fb3bf;--accent-ink:#7fd3dc;--accent-soft:#123b40;
+--brand:#d9a08c;--brand-soft:#3a2119;--band:#4a3520;
+--good-bg:#17331a;--good-ink:#8fdc8a;--warn-bg:#3d2f0a;--warn-ink:#f5c95a;
+--crit-bg:#3f1717;--crit-ink:#f19a9a;--info-bg:#17293f;--info-ink:#9cc4f5;
+--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);}
+*{box-sizing:border-box;margin:0}
+body{background:var(--page);color:var(--ink);font:14.5px/1.55 var(--font-ui);font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;padding:0 0 60px}
+.wrap{max-width:1080px;margin:0 auto;padding:16px}
+header{background:linear-gradient(100deg,var(--band),transparent 65%);border-bottom:1px solid var(--line)}
+header .wrap{padding:18px 16px 16px}
+h1{font-family:var(--font-display);font-size:23px;font-weight:700;letter-spacing:-.01em;color:var(--brand)}
+.sub{font-size:12.5px;color:var(--ink-2);margin-top:4px}
+h2{font-family:var(--font-display);font-size:17px;font-weight:700;margin:26px 0 4px;color:var(--ink)}
+h2 .n{color:var(--accent);margin-right:7px}
+.lead{font-size:13px;color:var(--ink-2);margin-bottom:11px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:14px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:11px 13px;box-shadow:var(--shadow)}
+.kpi .k{font-size:11.5px;color:var(--ink-3);font-weight:600;line-height:1.35;min-height:31px}
+.kpi .v{font-family:var(--font-display);font-size:28px;font-weight:700;line-height:1.15;margin-top:2px}
+.kpi .u{font-size:11.5px;color:var(--ink-3);font-weight:500}
+.kpi.crit .v{color:var(--crit)}.kpi.warn .v{color:var(--warn-ink)}.kpi.good .v{color:var(--good-ink)}.kpi.acc .v{color:var(--accent)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:14px;margin-bottom:12px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-size:11.5px;color:var(--ink-3);font-weight:600;padding:0 8px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px;border-top:1px solid var(--surface-2);vertical-align:middle}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tbody tr:hover{background:var(--surface-2)}
+tfoot td{border-top:2px solid var(--line-2);font-weight:700}
+.pill{display:inline-block;padding:1px 9px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.pill.out{background:var(--warn-bg);color:var(--warn-ink)}
+.pill.in{background:var(--accent-soft);color:var(--accent-ink)}
+.pill.ok{background:var(--good-bg);color:var(--good-ink)}
+.pill.bad{background:var(--crit-bg);color:var(--crit-ink)}
+.bars{display:flex;align-items:flex-end;gap:5px;height:150px;padding-top:8px;overflow-x:auto}
+.bcol{flex:1;min-width:52px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px;height:100%}
+.bcol .stack{width:100%;display:flex;align-items:flex-end;justify-content:center;height:100%;gap:3px}
+.bcol .pair{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%}
+.bcol .b1{background:var(--accent);border-radius:4px 4px 0 0;min-height:2px}
+.bcol .b2{background:var(--warn);border-radius:4px 4px 0 0;min-height:2px}
+.bcol .lbl{font-size:10px;color:var(--ink-3);white-space:nowrap}
+.bcol .num{font-size:11px;font-weight:700}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--ink-2);margin-top:9px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.note{background:var(--info-bg);color:var(--info-ink);border-radius:10px;padding:10px 13px;font-size:12.5px;line-height:1.55;margin:10px 0}
+.warnbox{background:var(--warn-bg);color:var(--warn-ink);border-radius:10px;padding:10px 13px;font-size:12.5px;line-height:1.55;margin:10px 0}
+.critbox{background:var(--crit-bg);color:var(--crit-ink);border-radius:10px;padding:10px 13px;font-size:13px;line-height:1.6;margin:10px 0}
+.goodbox{background:var(--good-bg);color:var(--good-ink);border-radius:10px;padding:10px 13px;font-size:12.5px;line-height:1.55;margin:10px 0}
+b.big{font-family:var(--font-display);font-size:19px}
+.opt{border-left:3px solid var(--accent);padding:2px 0 2px 12px;margin:12px 0}
+.opt h3{font-size:14.5px;font-weight:700;font-family:var(--font-display);margin-bottom:3px}
+.opt p{font-size:13px;color:var(--ink-2);margin-bottom:4px}
+.ctrl{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--surface-2);border-radius:10px;padding:10px 13px;margin:10px 0}
+.ctrl input[type=range]{flex:1;min-width:150px;accent-color:var(--accent)}
+.ctrl b{font-family:var(--font-display);font-size:17px;color:var(--accent)}
+ul{margin:6px 0 0 18px;font-size:13px;color:var(--ink-2);line-height:1.65}
+li{margin-bottom:3px}
+li b{color:var(--ink)}
+.small{font-size:11.5px;color:var(--ink-3);line-height:1.6}
+@media (max-width:640px){.wrap{padding:12px}h1{font-size:19px}.kpi .v{font-size:24px}table{font-size:12.5px}td,th{padding:6px 5px}}
+@media print{body{background:#fff}.card{break-inside:avoid;box-shadow:none}header{background:none}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>ภาระงานทีมจัดซื้อ — ตัวเลขจริงจากระบบ</h1>
+  <div class="sub">ข้อมูล ณ 21 ก.ย. 2026 · จากฐานข้อมูล Procurement Planner (119 งานที่ทีมดูแล · 466 ขั้นงาน · 442 การเคลื่อนไหว) + ชีท Nifty</div>
+</div></header>
+
+<div class="wrap">
+
+  <div class="kpis">
+    <div class="kpi acc"><div class="k">งานวิ่งพร้อมกัน ตอนนี้</div><div class="v">77</div><div class="u">พีค 94 งาน (7 ก.ย.)</div></div>
+    <div class="kpi crit"><div class="k">ขั้นงานค้างอยู่ในมือทีม</div><div class="v">168</div><div class="u">= 4.4 สัปดาห์ของกำลังปัจจุบัน</div></div>
+    <div class="kpi"><div class="k">ปิดได้จริง</div><div class="v">38</div><div class="u">ขั้น/สัปดาห์ (เฉลี่ย 6 สัปดาห์)</div></div>
+    <div class="kpi warn"><div class="k">งานใหม่ไหลเข้า</div><div class="v">41</div><div class="u">ขั้น/สัปดาห์ (ส.ค. 51 งาน)</div></div>
+    <div class="kpi warn"><div class="k">งานที่ต้องส่งสกรีนนอกบ้าน</div><div class="v">34%</div><div class="u">แต่กินภาระ 45% ของงานทั้งหมด</div></div>
+    <div class="kpi crit"><div class="k">ขั้นที่เลยกำหนดแล้ว</div><div class="v">32%</div><div class="u">54 จาก 168 ขั้นที่ค้าง</div></div>
+  </div>
+
+  <h2><span class="n">1</span>ภาระต่อสัปดาห์ — งานวิ่งพร้อมกัน vs ที่ปิดได้จริง</h2>
+  <div class="lead">แท่งเขียวน้ำเงิน = จำนวนงานที่วิ่งพร้อมกันในสัปดาห์นั้น · แท่งเหลือง = ขั้นงานที่ปิดได้จริงในสัปดาห์นั้น</div>
+  <div class="card">
+    <div class="bars" id="bars"></div>
+    <div class="legend">
+      <span><i style="background:var(--accent)"></i>งานวิ่งพร้อมกัน (งาน)</span>
+      <span><i style="background:var(--warn)"></i>ขั้นที่ปิดได้จริง (ขั้น)</span>
+    </div>
+    <div class="note">ตัวเลขก่อนเดือน ส.ค. ต่ำกว่าความจริง เพราะงานที่จบไปก่อนย้ายเข้าระบบ (7 ก.ย.) ไม่ได้ถูกบันทึกไว้ — <b>ใช้ตัวเลขเดือน ส.ค.–ก.ย. เป็นฐานอ้างอิง</b></div>
+  </div>
+
+  <h2><span class="n">2</span>หนึ่งโปรเจค = กี่ทัชพอยต์จริง</h2>
+  <div class="lead">สมมติฐานที่ตั้งไว้ 4–6 ทัชพอยต์/โปรเจค — ข้อมูลจริงยืนยันว่าถูก แต่<b>ขึ้นกับเส้นทางงาน</b> ต่างกันได้ถึง 2 เท่า</div>
+  <div class="card">
+    <table>
+      <thead><tr><th>เส้นทางงาน</th><th class="n">จำนวนงาน</th><th class="n">ขั้นในระบบ</th><th class="n">เที่ยวรถ</th><th class="n">รวมทัชพอยต์</th></tr></thead>
+      <tbody>
+        <tr><td><b>ผ้าใหม่ + ตัดเย็บ + สกรีนนอก</b> <span class="pill out">หนักสุด</span></td><td class="n">33</td><td class="n">5.5</td><td class="n">3</td><td class="n"><b>8.5</b></td></tr>
+        <tr><td>ผ้าใหม่ + ตัดเย็บ + สกรีนใน</td><td class="n">31</td><td class="n">4.1</td><td class="n">2</td><td class="n"><b>6.1</b></td></tr>
+        <tr><td>สต๊อก + สกรีนนอก</td><td class="n">7</td><td class="n">4.0</td><td class="n">2</td><td class="n"><b>6.0</b></td></tr>
+        <tr><td>สต๊อก + สกรีนใน</td><td class="n">20</td><td class="n">2.8</td><td class="n">1</td><td class="n"><b>3.8</b></td></tr>
+        <tr><td>สต๊อก (ยังไม่ระบุสกรีน)</td><td class="n">20</td><td class="n">2.6</td><td class="n">1</td><td class="n"><b>3.6</b></td></tr>
+      </tbody>
+      <tfoot><tr><td>เฉลี่ยทั้งหมด</td><td class="n">119</td><td class="n">3.9</td><td class="n">~2</td><td class="n">~5.9</td></tr></tfoot>
+    </table>
+    <div class="ctrl">
+      <span style="font-size:12.5px">1 ขั้น = ต้องติดต่อจริงกี่ครั้ง (สั่ง → ตาม → รับ/เช็ค)</span>
+      <input type="range" id="mult" min="1" max="4" step="0.5" value="2.5">
+      <b id="multV">2.5</b>
+    </div>
+    <div class="critbox">
+      ที่กำลังค้างในมือ <b>168 ขั้น</b> → <b class="big" id="actOpen">420</b> การติดต่อที่ยังไม่ได้ทำ<br>
+      ต่อสัปดาห์: ปิดได้ <b id="actWk">95</b> การติดต่อ ≈ <b id="actDay">19</b> ครั้ง/วันทำการ ทั้งทีม
+    </div>
+  </div>
+
+  <h2><span class="n">3</span>งานสกรีนนอกบ้าน — ตัวที่กินแรงจริง</h2>
+  <div class="lead">คำถามสำหรับวาง structure ใหม่: ต้องบริหารงานนอกบ้านเยอะแค่ไหน</div>
+  <div class="card">
+    <table>
+      <thead><tr><th>ประเภท</th><th class="n">งาน</th><th class="n">% ของงาน</th><th class="n">ขั้นทั้งหมด</th><th class="n">% ของภาระ</th><th class="n">ขั้น/งาน</th></tr></thead>
+      <tbody>
+        <tr><td><b>สกรีนนอก / จีน</b></td><td class="n">41</td><td class="n">34%</td><td class="n">210</td><td class="n"><b style="color:var(--crit)">45%</b></td><td class="n">5.1</td></tr>
+        <tr><td>สกรีนในบ้าน</td><td class="n">52</td><td class="n">44%</td><td class="n">185</td><td class="n">40%</td><td class="n">3.6</td></tr>
+        <tr><td>ไม่สกรีน / ยังไม่ระบุ</td><td class="n">26</td><td class="n">22%</td><td class="n">71</td><td class="n">15%</td><td class="n">2.7</td></tr>
+      </tbody>
+    </table>
+    <div class="warnbox">
+      <b>งานสกรีนนอก 1 งาน = ภาระ 1.4 เท่าของงานสกรีนใน</b> (5.1 vs 3.6 ขั้น) เพราะเพิ่มขั้น "ส่งเข้าโรงสกรีน" + "รับกลับเข้าคลัง" และเที่ยวรถอีก 1 เที่ยว<br>
+      ตอนนี้มีงานสกรีนนอกวิ่งอยู่ <b>27 งาน</b> · ต้องประสานซัพ <b>5–10 เจ้า/สัปดาห์</b> (ช่างศักดิ์ · ช่างเจ๋ง · พี่พี · ช่างแหลม · พี่ต่อ)
+    </div>
+    <div class="small">Lead time เฉลี่ย: สกรีนนอก <b>29 วัน</b> · สกรีนใน <b>27 วัน</b> — เวลาไม่ต่างกันมาก แต่<b>จำนวนครั้งที่ต้องลงมือต่างกันชัดเจน</b> คือคนหมดแรงกับงานนอก ไม่ใช่งานช้ากว่า</div>
+  </div>
+
+  <h2><span class="n">4</span>สมดุลงานเข้า–งานออก</h2>
+  <div class="card">
+    <table>
+      <thead><tr><th>รายการ</th><th class="n">ต่อสัปดาห์</th><th class="n">ต่อเดือน</th></tr></thead>
+      <tbody>
+        <tr><td>งานใหม่เข้าบอร์ด</td><td class="n">12 งาน</td><td class="n">51 งาน <span class="small">(ส.ค.)</span></td></tr>
+        <tr><td>ขั้นงานใหม่ที่เกิดขึ้น</td><td class="n">41 ขั้น</td><td class="n">175 ขั้น</td></tr>
+        <tr><td>ขั้นที่ปิดได้จริง</td><td class="n">38 ขั้น</td><td class="n">163 ขั้น</td></tr>
+        <tr><td><b>ส่วนต่าง (สะสมเพิ่ม)</b></td><td class="n"><b style="color:var(--crit)">+3 ขั้น</b></td><td class="n"><b style="color:var(--crit)">+12 ขั้น</b></td></tr>
+      </tbody>
+    </table>
+    <div class="critbox">
+      <b>กำลังการผลิตของทีมตอนนี้ ≈ ปริมาณงานที่เข้ามาพอดี — ไม่มี headroom เหลือเลย</b><br>
+      ยืนยันด้วยของจริง: ขั้นค้างในมือเพิ่มจาก 82 → 168 ขั้น ใน 7 สัปดาห์ (+11 ขั้น/สัปดาห์)<br>
+      แปลว่า งานใหม่ที่เพิ่มขึ้นทุก 1 งาน = อีก 4–8 ทัชพอยต์ ที่ไม่มีใครว่างรับ
+    </div>
+  </div>
+
+  <h2><span class="n">5</span>กระจายงานต่อคน (เฉพาะงานที่ยังวิ่ง)</h2>
+  <div class="card">
+    <table>
+      <thead><tr><th>ผู้รับผิดชอบ</th><th class="n">งานที่ถืออยู่</th><th class="n">ในนั้นสกรีนนอก</th><th class="n">ขั้นค้าง</th><th class="n">% ของภาระทีม</th></tr></thead>
+      <tbody>
+        <tr><td><b>กิ่ง</b></td><td class="n">31</td><td class="n">11</td><td class="n">57</td><td class="n"><b style="color:var(--crit)">34%</b></td></tr>
+        <tr><td>จัดซื้ออื่นๆ</td><td class="n">6</td><td class="n">2</td><td class="n">32</td><td class="n">19%</td></tr>
+        <tr><td>ห้องสกรีน</td><td class="n">15</td><td class="n">2</td><td class="n">26</td><td class="n">15%</td></tr>
+        <tr><td>เพชร</td><td class="n">10</td><td class="n">8</td><td class="n">22</td><td class="n">13%</td></tr>
+        <tr><td>พี่แหวน</td><td class="n">5</td><td class="n">2</td><td class="n">10</td><td class="n">6%</td></tr>
+        <tr><td>โม</td><td class="n">7</td><td class="n">2</td><td class="n">9</td><td class="n">5%</td></tr>
+        <tr><td>ทีมอื่น / ไม่ระบุ</td><td class="n">3</td><td class="n">0</td><td class="n">12</td><td class="n">7%</td></tr>
+      </tbody>
+      <tfoot><tr><td>รวม</td><td class="n">77</td><td class="n">27</td><td class="n">168</td><td class="n">100%</td></tr></tfoot>
+    </table>
+    <div class="warnbox"><b>กิ่งถือ 40% ของงานที่วิ่งอยู่ และ 34% ของขั้นค้าง</b> — ถ้ากิ่งลาหรือป่วย ทีมหยุดทันที ข้อนี้คือความเสี่ยงที่ต้องแก้ใน structure ใหม่</div>
+  </div>
+
+  <h2><span class="n">6</span>ปัญหาที่ตัวเลขชี้ — เรียงตามความแรง</h2>
+  <div class="card">
+    <ul>
+      <li><b>ไม่ได้ขาดคน แต่ขาดแผน</b> — 82 จาก 168 ขั้นที่ค้าง (49%) <b>ยังไม่มีวันกำหนดเลย</b> งานพวกนี้ไม่โผล่ในปฏิทินใคร กลายเป็นงานที่ถูกลืมจนลูกค้าทวง</li>
+      <li><b>เลยกำหนดแล้ว 54 ขั้น (32%)</b> — หนึ่งในสามของสิ่งที่ค้างอยู่ เลยวันที่ตกลงไว้แล้ว</li>
+      <li><b>งานนอกบ้านกิน 45% ของแรง จากจำนวนแค่ 34%</b> — เป็นงานที่ขึ้นกับคนอื่น ทวงได้อย่างเดียว คุมไม่ได้</li>
+      <li><b>กำลังทีมเต็มพอดีกับงานที่เข้า</b> — ไม่มีที่ว่างรับงานเร่ง หรืองานที่ต้องแก้</li>
+      <li><b>งานกระจุกที่คนเดียว 40%</b> — ความเสี่ยงหยุดชะงัก</li>
+    </ul>
+  </div>
+
+  <h2><span class="n">7</span>ทางเลือก structure — ตัวเลขรองรับแบบไหน</h2>
+  <div class="card">
+    <div class="opt">
+      <h3>ก · แยกทีมตามเส้นทางงาน (ข้อมูลหนุนแบบนี้มากที่สุด)</h3>
+      <p>คน 1 ดูแล <b>งานสกรีนนอกบ้านทั้งหมด</b> (27 งานวิ่ง · 45% ของภาระ · ซัพ 5–10 เจ้า) — เป็นงานประสานภายนอกล้วน ต้องการคนที่ตามงานเก่ง<br>
+      คนที่เหลือดูแล <b>งานสกรีนในบ้าน + สต๊อก</b> (50 งาน · 55% ของภาระ) — คุมเองได้ จบในบ้าน</p>
+      <p class="small">ข้อดี: ตัดคนกลางระหว่างซัพกับทีม · ซัพมีคนคุยคนเดียวจำง่าย · วัด KPI แยกได้ชัด<br>
+      ข้อควรระวัง: คนดูแลงานนอกจะรับภาระ 45% คนเดียว ต้องมีคนสำรอง</p>
+    </div>
+    <div class="opt">
+      <h3>ข · แยกตามขั้นตอน (ผ้า/ตัดเย็บ ↔ สกรีน/ส่งมอบ)</h3>
+      <p>ทีมต้นน้ำ: สั่งผ้า–จ่ายเงิน–ส่งเข้าโรงตัด (135 ขั้น) · ทีมปลายน้ำ: สกรีน–รับเข้าคลัง–ส่งลูกค้า (188 ขั้น)</p>
+      <p class="small">ข้อดี: แต่ละคนเชี่ยวชาญลึก · ข้อเสีย: ต้องส่งไม้ต่อกลางทางทุกงาน = เพิ่มจุดตกหล่นอีก 1 จุดต่อ 1 งาน</p>
+    </div>
+    <div class="opt">
+      <h3>ค · คงโครงเดิม แต่เพิ่มกติกาวางแผน</h3>
+      <p>บังคับใส่วันกำหนดทุกขั้นตอนตั้งแต่เปิดงาน (แก้ปัญหา 49% ที่ไม่มีแผน) + เกลี่ยงานจากกิ่งออก 10–15 งาน</p>
+      <p class="small">ทำได้ทันทีไม่ต้องรอ structure ใหม่ · แต่ไม่ได้แก้เรื่องงานนอกบ้านที่กินแรง</p>
+    </div>
+    <div class="goodbox">ข้อเสนอ: <b>ทำ ค ทันทีสัปดาห์นี้</b> (ได้ผลเร็ว ไม่มีต้นทุน) แล้ว<b>วาง ก เป็นโครงถาวร</b> — เพราะข้อมูลชี้ว่าเส้นแบ่งที่ชัดที่สุดคือ "งานที่คุมเองได้" กับ "งานที่ต้องตามคนอื่น"</div>
+  </div>
+
+  <h2><span class="n">8</span>บริบท: ภาพรวมทั้งบริษัท</h2>
+  <div class="card">
+    <table>
+      <thead><tr><th>เดือน</th><th class="n">MD&amp;SAN เปิดใหม่</th><th class="n">GSC เปิดใหม่</th><th class="n">รวม</th><th class="n">ที่จัดซื้อต้องวิ่ง</th></tr></thead>
+      <tbody>
+        <tr><td>มิ.ย. 2026</td><td class="n">307</td><td class="n">3</td><td class="n">310</td><td class="n">—</td></tr>
+        <tr><td>ก.ค. 2026</td><td class="n">328</td><td class="n">66</td><td class="n">394</td><td class="n">24</td></tr>
+        <tr><td>ส.ค. 2026</td><td class="n">240</td><td class="n">216</td><td class="n">456</td><td class="n">51</td></tr>
+        <tr><td>ก.ย. 2026 <span class="small">(ถึง 21)</span></td><td class="n">133</td><td class="n">299</td><td class="n">432</td><td class="n">21</td></tr>
+      </tbody>
+    </table>
+    <div class="note">งานทั้งบริษัทราว <b>450 งาน/เดือน</b> — จัดซื้อวิ่งจริงราว <b>11%</b> (งานผลิตใหม่/ต้องสกรีน) ที่เหลือเป็นงานสต๊อกหรือทีมอื่นดูแล<br>
+      <b>GSC โตเร็วมาก</b> 66 → 216 → 299 งาน/เดือน — ถ้าสัดส่วนงานผลิตเท่าเดิม ภาระจัดซื้อจะเพิ่มอีกตามตัวนี้ ควรเผื่อไว้ในโครงใหม่</div>
+  </div>
+
+  <h2><span class="n">9</span>ข้อจำกัดของตัวเลขชุดนี้ — บอกไว้ก่อนใช้เถียงในห้องประชุม</h2>
+  <div class="card">
+    <ul>
+      <li>ระบบเริ่มใช้จริง <b>7 ก.ย. 2026</b> — งานก่อนหน้านั้นถูกย้ายเข้าเฉพาะที่ยังวิ่งอยู่ ตัวเลขเดือน มิ.ย.–ก.ค. จึงต่ำกว่าจริง</li>
+      <li>"ทัชพอยต์" ที่นับ = ขั้นงานในระบบ + เที่ยวรถโดยประมาณ <b>ไม่ได้นับการโทรตาม/แชทไลน์</b> ที่เกิดจริงระหว่างขั้น — ของจริงมากกว่านี้</li>
+      <li>งาน 22% ยังไม่ระบุว่าสกรีนในหรือนอก — สัดส่วน 34% ของงานนอกบ้านอาจสูงกว่านี้จริง</li>
+      <li>ตัวเลขต่อคนนับจากช่อง "ผู้รับผิดชอบ" ในระบบ ซึ่งบางงานยังไม่ได้ใส่</li>
+    </ul>
+  </div>
+
+  <div class="small" style="text-align:center;margin-top:22px">สร้างจากฐานข้อมูลจริง 21 ก.ย. 2026 · อัพเดทตัวเลขใหม่ได้ตลอดจากบอร์ด Procurement Planner</div>
+</div>
+
+<script>
+const OPEN=168, WKCLOSE=38;
+const bars=[
+ ['3 ส.ค.',46,13],['10 ส.ค.',61,6],['17 ส.ค.',72,22],['24 ส.ค.',84,78],
+ ['31 ส.ค.',93,65],['7 ก.ย.',94,47],['14 ก.ย.',87,67],['21 ก.ย.',74,0]];
+const maxV=Math.max(...bars.map(b=>Math.max(b[1],b[2])));
+document.getElementById('bars').innerHTML=bars.map(([l,w,c])=>
+ `<div class="bcol"><div class="stack">
+    <span class="pair"><span class="num">${w}</span><div class="b1" style="height:${w/maxV*82}%;width:100%"></div></span>
+    <span class="pair"><span class="num" style="color:var(--warn-ink)">${c||'0'}</span><div class="b2" style="height:${c/maxV*82}%;width:100%"></div></span>
+  </div><span class="lbl">${l}</span></div>`).join('');
+const m=document.getElementById('mult');
+function upd(){
+  const v=+m.value;
+  document.getElementById('multV').textContent=v;
+  document.getElementById('actOpen').textContent=Math.round(OPEN*v).toLocaleString();
+  document.getElementById('actWk').textContent=Math.round(WKCLOSE*v);
+  document.getElementById('actDay').textContent=Math.round(WKCLOSE*v/5);
+}
+m.oninput=upd;upd();
+</script>
+</body>
+</html>
