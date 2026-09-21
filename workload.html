@@ -90,6 +90,10 @@ ul{margin:6px 0 0 18px;font-size:13px;color:var(--ink-2);line-height:1.65}
 li{margin-bottom:3px}
 li b{color:var(--ink)}
 .small{font-size:11.5px;color:var(--ink-3);line-height:1.6}
+.per{display:inline-block;font-size:11px;font-weight:600;color:var(--accent-ink);background:var(--accent-soft);padding:2px 9px;border-radius:999px;margin-left:8px;vertical-align:3px;font-family:var(--font-ui)}
+.blk{margin-bottom:16px}
+.blkh{font-size:13.5px;font-weight:700;margin-bottom:2px}
+.blkp{font-size:11.5px;color:var(--ink-3);margin-bottom:7px}
 @media (max-width:640px){.wrap{padding:12px}h1{font-size:19px}.kpi .v{font-size:24px}table{font-size:12.5px}td,th{padding:6px 5px}}
 @media print{body{background:#fff}.card{break-inside:avoid;box-shadow:none}header{background:none}}
 </style>
@@ -97,22 +101,23 @@ li b{color:var(--ink)}
 <body>
 <header><div class="wrap">
   <h1>ภาระงานทีมจัดซื้อ — ตัวเลขจริงจากระบบ</h1>
-  <div class="sub">ข้อมูล ณ 21 ก.ย. 2026 · จากฐานข้อมูล Procurement Planner (119 งานที่ทีมดูแล · 466 ขั้นงาน · 442 การเคลื่อนไหว) + ชีท Nifty</div>
+  <div class="sub">จากฐานข้อมูล Procurement Planner + ชีท Nifty · ดึงข้อมูล 21 ก.ย. 2026</div>
+  <div class="sub" style="margin-top:7px"><b>ช่วงเวลาของข้อมูล:</b> งานที่เปิดในระบบ <b>ก.ค. – 21 ก.ย. 2026</b> (119 งาน · 466 ขั้นงาน) · ตัวเลข "ตอนนี้" = ภาพนิ่ง ณ <b>21 ก.ย.</b> · ตัวเลข "ต่อสัปดาห์" = เฉลี่ยจาก <b>6 สัปดาห์ล่าสุด (11 ส.ค. – 21 ก.ย.)</b></div>
 </div></header>
 
 <div class="wrap">
 
   <div class="kpis">
-    <div class="kpi acc"><div class="k">งานวิ่งพร้อมกัน ตอนนี้</div><div class="v">77</div><div class="u">พีค 94 งาน (7 ก.ย.)</div></div>
-    <div class="kpi crit"><div class="k">ขั้นงานค้างอยู่ในมือทีม</div><div class="v">168</div><div class="u">= 4.4 สัปดาห์ของกำลังปัจจุบัน</div></div>
-    <div class="kpi"><div class="k">ปิดได้จริง</div><div class="v">38</div><div class="u">ขั้น/สัปดาห์ (เฉลี่ย 6 สัปดาห์)</div></div>
-    <div class="kpi warn"><div class="k">งานใหม่ไหลเข้า</div><div class="v">41</div><div class="u">ขั้น/สัปดาห์ (ส.ค. 51 งาน)</div></div>
-    <div class="kpi warn"><div class="k">งานที่ต้องส่งสกรีนนอกบ้าน</div><div class="v">34%</div><div class="u">แต่กินภาระ 45% ของงานทั้งหมด</div></div>
-    <div class="kpi crit"><div class="k">ขั้นที่เลยกำหนดแล้ว</div><div class="v">32%</div><div class="u">54 จาก 168 ขั้นที่ค้าง</div></div>
+    <div class="kpi acc"><div class="k">งานวิ่งพร้อมกัน ตอนนี้</div><div class="v">77</div><div class="u">ภาพนิ่ง 21 ก.ย. · พีค 94 งาน (7 ก.ย.)</div></div>
+    <div class="kpi crit"><div class="k">ขั้นงานค้างอยู่ในมือทีม</div><div class="v">168</div><div class="u">ภาพนิ่ง 21 ก.ย. · = 4.4 สัปดาห์ของกำลังทีม</div></div>
+    <div class="kpi"><div class="k">ปิดได้จริง</div><div class="v">38</div><div class="u">ขั้น/สัปดาห์ · เฉลี่ย 11 ส.ค.–21 ก.ย.</div></div>
+    <div class="kpi warn"><div class="k">งานใหม่ไหลเข้า</div><div class="v">41</div><div class="u">ขั้น/สัปดาห์ · คิดจากเดือน ส.ค. (51 งาน)</div></div>
+    <div class="kpi warn"><div class="k">งานที่ต้องส่งสกรีนนอกบ้าน</div><div class="v">34%</div><div class="u">สะสม ก.ค.–ก.ย. · 41 จาก 119 งาน</div></div>
+    <div class="kpi crit"><div class="k">ขั้นที่เลยกำหนดแล้ว</div><div class="v">32%</div><div class="u">ภาพนิ่ง 21 ก.ย. · 54 จาก 168 ขั้น</div></div>
   </div>
 
-  <h2><span class="n">1</span>ภาระต่อสัปดาห์ — งานวิ่งพร้อมกัน vs ที่ปิดได้จริง</h2>
-  <div class="lead">แท่งเขียวน้ำเงิน = จำนวนงานที่วิ่งพร้อมกันในสัปดาห์นั้น · แท่งเหลือง = ขั้นงานที่ปิดได้จริงในสัปดาห์นั้น</div>
+  <h2><span class="n">1</span>ภาระต่อสัปดาห์ — งานวิ่งพร้อมกัน vs ที่ปิดได้จริง<span class="per">รายสัปดาห์ · 3 ส.ค. – 21 ก.ย.</span></h2>
+  <div class="lead">แท่งเขียวน้ำเงิน = จำนวนงานที่<b>วิ่งพร้อมกัน</b>ในสัปดาห์นั้น (ภาพนิ่งของสัปดาห์) · แท่งเหลือง = <b>ขั้นงานที่ปิดได้จริง</b>ในสัปดาห์นั้น (กิจกรรมในสัปดาห์)</div>
   <div class="card">
     <div class="bars" id="bars"></div>
     <div class="legend">
@@ -122,7 +127,7 @@ li b{color:var(--ink)}
     <div class="note">ตัวเลขก่อนเดือน ส.ค. ต่ำกว่าความจริง เพราะงานที่จบไปก่อนย้ายเข้าระบบ (7 ก.ย.) ไม่ได้ถูกบันทึกไว้ — <b>ใช้ตัวเลขเดือน ส.ค.–ก.ย. เป็นฐานอ้างอิง</b></div>
   </div>
 
-  <h2><span class="n">2</span>หนึ่งโปรเจค = กี่ทัชพอยต์จริง</h2>
+  <h2><span class="n">2</span>หนึ่งโปรเจค = กี่ทัชพอยต์จริง<span class="per">ค่าเฉลี่ยต่อ 1 งาน · จาก 119 งาน</span></h2>
   <div class="lead">สมมติฐานที่ตั้งไว้ 4–6 ทัชพอยต์/โปรเจค — ข้อมูลจริงยืนยันว่าถูก แต่<b>ขึ้นกับเส้นทางงาน</b> ต่างกันได้ถึง 2 เท่า</div>
   <div class="card">
     <table>
@@ -147,25 +152,56 @@ li b{color:var(--ink)}
     </div>
   </div>
 
-  <h2><span class="n">3</span>งานสกรีนนอกบ้าน — ตัวที่กินแรงจริง</h2>
-  <div class="lead">คำถามสำหรับวาง structure ใหม่: ต้องบริหารงานนอกบ้านเยอะแค่ไหน</div>
+  <h2><span class="n">3</span>งานสกรีนนอกบ้าน — ตัวที่กินแรงจริง<span class="per">ดู 3 มุม: สะสม / ต่อเดือน / ตอนนี้</span></h2>
+  <div class="lead">คำถามสำหรับวาง structure ใหม่: ต้องบริหารงานนอกบ้านเยอะแค่ไหน — ตัวเลขต่างกันตามคำถาม จึงแยกให้ครบ 3 มุม</div>
   <div class="card">
-    <table>
-      <thead><tr><th>ประเภท</th><th class="n">งาน</th><th class="n">% ของงาน</th><th class="n">ขั้นทั้งหมด</th><th class="n">% ของภาระ</th><th class="n">ขั้น/งาน</th></tr></thead>
-      <tbody>
-        <tr><td><b>สกรีนนอก / จีน</b></td><td class="n">41</td><td class="n">34%</td><td class="n">210</td><td class="n"><b style="color:var(--crit)">45%</b></td><td class="n">5.1</td></tr>
-        <tr><td>สกรีนในบ้าน</td><td class="n">52</td><td class="n">44%</td><td class="n">185</td><td class="n">40%</td><td class="n">3.6</td></tr>
-        <tr><td>ไม่สกรีน / ยังไม่ระบุ</td><td class="n">26</td><td class="n">22%</td><td class="n">71</td><td class="n">15%</td><td class="n">2.7</td></tr>
-      </tbody>
-    </table>
-    <div class="warnbox">
-      <b>งานสกรีนนอก 1 งาน = ภาระ 1.4 เท่าของงานสกรีนใน</b> (5.1 vs 3.6 ขั้น) เพราะเพิ่มขั้น "ส่งเข้าโรงสกรีน" + "รับกลับเข้าคลัง" และเที่ยวรถอีก 1 เที่ยว<br>
-      ตอนนี้มีงานสกรีนนอกวิ่งอยู่ <b>27 งาน</b> · ต้องประสานซัพ <b>5–10 เจ้า/สัปดาห์</b> (ช่างศักดิ์ · ช่างเจ๋ง · พี่พี · ช่างแหลม · พี่ต่อ)
+    <div class="blk">
+      <div class="blkh">มุมที่ 1 · สะสมทั้งหมด — งานที่ผ่านมือทีมตั้งแต่ ก.ค. ถึง 21 ก.ย. (119 งาน)</div>
+      <div class="blkp">ใช้ตอบคำถาม "โครงสร้างงานของเราหน้าตาเป็นยังไง" — ไม่ใช่ตัวเลขต่อสัปดาห์</div>
+      <table>
+        <thead><tr><th>ประเภท</th><th class="n">งาน</th><th class="n">% ของงาน</th><th class="n">ขั้นที่งานพวกนี้สร้าง</th><th class="n">% ของภาระ</th><th class="n">ขั้น/งาน</th></tr></thead>
+        <tbody>
+          <tr><td><b>สกรีนนอก / จีน</b></td><td class="n">41</td><td class="n">34%</td><td class="n">210</td><td class="n"><b style="color:var(--crit)">45%</b></td><td class="n">5.1</td></tr>
+          <tr><td>สกรีนในบ้าน</td><td class="n">52</td><td class="n">44%</td><td class="n">185</td><td class="n">40%</td><td class="n">3.6</td></tr>
+          <tr><td>ไม่สกรีน / ยังไม่ระบุ</td><td class="n">26</td><td class="n">22%</td><td class="n">71</td><td class="n">15%</td><td class="n">2.7</td></tr>
+        </tbody>
+        <tfoot><tr><td>รวม</td><td class="n">119</td><td class="n">100%</td><td class="n">466</td><td class="n">100%</td><td class="n">3.9</td></tr></tfoot>
+      </table>
+      <div class="warnbox" style="margin-bottom:0"><b>ข้อสรุปเชิงโครงสร้าง: งานสกรีนนอก 1 งาน = ภาระ 1.4 เท่าของงานสกรีนใน</b> (5.1 vs 3.6 ขั้น) เพราะเพิ่มขั้น "ส่งเข้าโรงสกรีน" + "รับกลับเข้าคลัง" และเที่ยวรถอีก 1 เที่ยว</div>
     </div>
-    <div class="small">Lead time เฉลี่ย: สกรีนนอก <b>29 วัน</b> · สกรีนใน <b>27 วัน</b> — เวลาไม่ต่างกันมาก แต่<b>จำนวนครั้งที่ต้องลงมือต่างกันชัดเจน</b> คือคนหมดแรงกับงานนอก ไม่ใช่งานช้ากว่า</div>
+
+    <div class="blk">
+      <div class="blkh">มุมที่ 2 · งานสกรีนนอกที่เข้ามาใหม่ — รายเดือน</div>
+      <div class="blkp">ใช้ตอบคำถาม "ต้องรับมือเดือนละกี่งาน" — นับจากวันเปิดงานใน Nifty</div>
+      <table>
+        <thead><tr><th>เดือนที่เปิดงาน</th><th class="n">งานเข้าบอร์ด</th><th class="n">ในนั้นสกรีนนอก</th><th class="n">สัดส่วน</th><th class="n">≈ ต่อสัปดาห์</th></tr></thead>
+        <tbody>
+          <tr><td>ก.ค. 2026</td><td class="n">24</td><td class="n">10</td><td class="n">42%</td><td class="n">2–3 งาน</td></tr>
+          <tr><td>ส.ค. 2026</td><td class="n">51</td><td class="n">17</td><td class="n">33%</td><td class="n">4 งาน</td></tr>
+          <tr><td>ก.ย. 2026 <span class="small">(ถึงวันที่ 21)</span></td><td class="n">21</td><td class="n">5</td><td class="n">24%</td><td class="n">1–2 งาน</td></tr>
+        </tbody>
+      </table>
+      <div class="small">ก.ย. ต่ำกว่าจริง เพราะงานที่เพิ่งเปิดใน Nifty ยังทยอยเข้าบอร์ดไม่ครบ · เดือนที่ข้อมูลครบที่สุดคือ <b>ส.ค. = 17 งานสกรีนนอก/เดือน ≈ 4 งาน/สัปดาห์</b></div>
+    </div>
+
+    <div class="blk" style="margin-bottom:0">
+      <div class="blkh">มุมที่ 3 · ที่ค้างอยู่ในมือตอนนี้ — ภาพนิ่ง ณ 21 ก.ย.</div>
+      <div class="blkp">ใช้ตอบคำถาม "ถ้าแบ่งทีมวันนี้ คนที่รับงานนอกบ้านจะถืออะไรบ้าง"</div>
+      <table>
+        <thead><tr><th>ประเภท</th><th class="n">งานที่ยังวิ่ง</th><th class="n">สัดส่วน</th><th class="n">ขั้นที่ยังค้าง</th><th class="n">สัดส่วน</th></tr></thead>
+        <tbody>
+          <tr><td><b>สกรีนนอก / จีน</b></td><td class="n">27</td><td class="n"><b style="color:var(--warn-ink)">35%</b></td><td class="n">55</td><td class="n"><b style="color:var(--warn-ink)">33%</b></td></tr>
+          <tr><td>งานอื่นทั้งหมด</td><td class="n">50</td><td class="n">65%</td><td class="n">113</td><td class="n">67%</td></tr>
+        </tbody>
+        <tfoot><tr><td>รวม</td><td class="n">77</td><td class="n">100%</td><td class="n">168</td><td class="n">100%</td></tr></tfoot>
+      </table>
+      <div class="note">ต้องประสานซัพสกรีนนอก <b>5–10 เจ้า/สัปดาห์</b> (ช่างศักดิ์ · ช่างเจ๋ง · พี่พี · ช่างแหลม · พี่ต่อ)<br>
+        <b>ทำไมตอนนี้ (33%) ต่ำกว่าสะสม (45%)</b> — ช่วง 24–31 ส.ค. ทีมเคลียร์งานสกรีนนอกไปเยอะมาก (57 และ 42 จากขั้นที่ปิดได้ 78 และ 65 ขั้น) งานกลุ่มนี้จึงเดินไปไกลกว่า ตัวเลขค้างเลยลดลง — ไม่ใช่ว่าภาระหายไป</div>
+      <div class="small" style="margin-top:8px">Lead time เฉลี่ยต่อ 1 งาน (เฉพาะ 40 งานที่จบครบทุกขั้นแล้ว): สกรีนนอก <b>29 วัน</b> · สกรีนใน <b>27 วัน</b> — เวลาไม่ต่างกันมาก แต่<b>จำนวนครั้งที่ต้องลงมือต่างกันชัดเจน</b> คือคนหมดแรงกับงานนอก ไม่ใช่งานช้ากว่า</div>
+    </div>
   </div>
 
-  <h2><span class="n">4</span>สมดุลงานเข้า–งานออก</h2>
+  <h2><span class="n">4</span>สมดุลงานเข้า–งานออก<span class="per">เฉลี่ยต่อสัปดาห์ · ส.ค.–ก.ย.</span></h2>
   <div class="card">
     <table>
       <thead><tr><th>รายการ</th><th class="n">ต่อสัปดาห์</th><th class="n">ต่อเดือน</th></tr></thead>
@@ -183,7 +219,7 @@ li b{color:var(--ink)}
     </div>
   </div>
 
-  <h2><span class="n">5</span>กระจายงานต่อคน (เฉพาะงานที่ยังวิ่ง)</h2>
+  <h2><span class="n">5</span>กระจายงานต่อคน<span class="per">ภาพนิ่ง ณ 21 ก.ย.</span></h2>
   <div class="card">
     <table>
       <thead><tr><th>ผู้รับผิดชอบ</th><th class="n">งานที่ถืออยู่</th><th class="n">ในนั้นสกรีนนอก</th><th class="n">ขั้นค้าง</th><th class="n">% ของภาระทีม</th></tr></thead>
@@ -234,7 +270,7 @@ li b{color:var(--ink)}
     <div class="goodbox">ข้อเสนอ: <b>ทำ ค ทันทีสัปดาห์นี้</b> (ได้ผลเร็ว ไม่มีต้นทุน) แล้ว<b>วาง ก เป็นโครงถาวร</b> — เพราะข้อมูลชี้ว่าเส้นแบ่งที่ชัดที่สุดคือ "งานที่คุมเองได้" กับ "งานที่ต้องตามคนอื่น"</div>
   </div>
 
-  <h2><span class="n">8</span>บริบท: ภาพรวมทั้งบริษัท</h2>
+  <h2><span class="n">8</span>บริบท: ภาพรวมทั้งบริษัท<span class="per">ต่อเดือน · มิ.ย.–ก.ย.</span></h2>
   <div class="card">
     <table>
       <thead><tr><th>เดือน</th><th class="n">MD&amp;SAN เปิดใหม่</th><th class="n">GSC เปิดใหม่</th><th class="n">รวม</th><th class="n">ที่จัดซื้อต้องวิ่ง</th></tr></thead>
