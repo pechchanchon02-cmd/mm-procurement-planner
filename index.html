@@ -569,6 +569,10 @@ function imgOf(id){const p=PROC[id]||{},j=JOBS[id]||{};
   if(dm)return 'https://drive.google.com/thumbnail?id='+dm[1]+'&sz=w400';
   if(/drive\.google\.com\/drive\/folders/.test(u))return'';   // ลิงก์โฟลเดอร์ แสดงไม่ได้
   return u;}
+function keyOf(id){   // Supabase Storage รับเฉพาะ ASCII — เลขงานภาษาไทยต้องแปลงก่อน
+  let s=(id||'').replace(/[^A-Za-z0-9._-]/g,'-').replace(/-+/g,'-').replace(/^[-.]+|[-.]+$/g,'');
+  if(!s){let h=0;for(const c of (id||'x'))h=(h*31+c.charCodeAt(0))>>>0;s='job-'+h.toString(36)}
+  return s}
 function thumb(id){const u=imgOf(id);
   return u?`<img class="thumb" src="${esc(u)}" loading="lazy">`:'<span class="thumb ph">🧵</span>'}
 function msOf(id){return (MS[id]||[]).slice().sort((a,b)=>a.sort-b.sort)}
@@ -1412,7 +1416,7 @@ async function uploadBlob(id,blob){
     const cv=document.createElement('canvas');cv.width=bmp.width*sc;cv.height=bmp.height*sc;
     cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);
     const out=await new Promise(res=>cv.toBlob(res,'image/jpeg',.85));
-    const path=`${id}/${Date.now()}.jpg`;
+    const path=`${keyOf(id)}/${Date.now()}.jpg`;
     const {error}=await sb.storage.from('job-images').upload(path,out,{contentType:'image/jpeg',upsert:true});
     if(error)throw error;
     const {data}=sb.storage.from('job-images').getPublicUrl(path);
@@ -1709,7 +1713,7 @@ async function woUploadMain(blob){
     const cv=document.createElement('canvas');cv.width=bmp.width*sc;cv.height=bmp.height*sc;
     cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);
     const out=await new Promise(res=>cv.toBlob(res,'image/jpeg',.87));
-    const path=`wo/${WOCUR.job_id}/main_${Date.now()}.jpg`;
+    const path=`wo/${keyOf(WOCUR.job_id)}/main_${Date.now()}.jpg`;
     const {error}=await sb.storage.from('job-images').upload(path,out,{contentType:'image/jpeg',upsert:true});
     if(error)throw error;
     WOCUR.main_image=sb.storage.from('job-images').getPublicUrl(path).data.publicUrl;
@@ -1724,7 +1728,7 @@ async function woUpload(blob){
     const cv=document.createElement('canvas');cv.width=bmp.width*sc;cv.height=bmp.height*sc;
     cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);
     const out=await new Promise(res=>cv.toBlob(res,'image/jpeg',.87));
-    const path=`wo/${WOCUR.job_id}/${Date.now()}.jpg`;
+    const path=`wo/${keyOf(WOCUR.job_id)}/${Date.now()}.jpg`;
     const {error}=await sb.storage.from('job-images').upload(path,out,{contentType:'image/jpeg',upsert:true});
     if(error)throw error;
     const {data}=sb.storage.from('job-images').getPublicUrl(path);
