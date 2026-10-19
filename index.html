@@ -121,7 +121,10 @@ main{max-width:1200px;margin:0 auto;padding:12px 16px 120px}
 .tdFact i{width:11px;height:11px;border-radius:50%;border:1px solid var(--line-2);display:inline-block}
 .ibGo{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--accent-soft);border-radius:9px;padding:8px 11px;margin:0 12px 8px;font-size:12.5px;color:var(--accent-ink)}
 .ibGo .btnG{padding:5px 11px;font-size:12px;white-space:nowrap}
-@media (max-width:640px){.tdPic{width:70px;height:70px}}
+@media (max-width:640px){.tdPic{width:70px;height:70px}
+  .tdRow{flex-wrap:wrap}
+  .tdRight{order:3;flex-basis:100%;margin-top:2px}   /* มือถือ: ป้ายวันส่งลงมาอยู่บรรทัดของมันเอง ชื่องานจะได้ความกว้างเต็ม */
+  .tdTitle{font-size:14.5px}}
 .tag.grp{background:var(--info-bg);border-color:transparent;color:var(--info-ink);font-weight:600;cursor:pointer}
 .tag.grp:hover{filter:brightness(.95)}
 .tag.wo{background:var(--good-bg);border-color:transparent;color:var(--good-ink)}
@@ -614,6 +617,10 @@ function designNorm(nm){      // ตัดไซส์/จำนวน/รหั
   x=x.replace(/ทีมขาย\s*:.*$/,'');
   x=x.replace(new RegExp('(?:ไซส์|ไซซ์|size)\\s*'+SZRE+'\\b','gi'),'');
   x=x.replace(new RegExp('\\s'+SZRE+'(?=\\s|$)','g'),'');
+  x=x.replace(/=\s*[\d,.]+/g,'');   // ชื่องานที่ไล่ไซส์แบบ "...-SBL = 26" เหลือ "= 26" ค้าง
+  x=x.replace(/[\d,.]+\s*(?:ตัว|ใบ|ชิ้น)/g,'');   // "10 ตัว 20 ตัว" ในชื่องานไม่ใช่ชื่อแบบ
+  x=x.replace(/[=|]+/g,' ');
+  x=x.replace(/รวม(?:จำนวน)?\s*$/,'');   // เหลือคำว่า "รวม" ห้อยท้ายหลังตัดจำนวนออก
   return x.replace(/[\s/\-–·,]+/g,' ').trim().slice(0,70);
 }
 function designKey(id){       // คีย์จัดกลุ่มจริง = ออเดอร์ + แบบ + สี (ไซส์รวมกันได้)
@@ -768,6 +775,8 @@ async function refreshRaw(){
       if(r.due_date&&!j.due_date)patch.due_date=r.due_date;   // due ที่ตั้งเองไว้ ไม่ถูกทับ
       if(Object.keys(patch).length){const nj={...j,...patch,job_id:p.job_id};ups.push(nj);JOBS[p.job_id]=nj}});
     if(ups.length){await sb.from('jobs').upsert(ups);render();toast('อัพเดทข้อมูลจาก raw แล้ว '+ups.length+' งาน')}
+    if(INBOX&&INBOX.length)renderInbox();          // ตอนนี้จับกลุ่มได้แล้ว ตัวเลขในกล่องงานเข้าถึงจะถูก
+    updTodoBadge();if(view==='todo')renderTodo();
   }catch(e){console.warn('refreshRaw:',e.message)}
 }
 async function logEvent(job_id,field,oldv,newv){if(DEMO||!sb)return;
@@ -843,7 +852,9 @@ const thTs=ts=>new Date(ts).toLocaleString('th-TH',{day:'numeric',month:'short',
 let IBFORM=false,IBEXP=null,IBEDIT=null;
 function renderInbox(){
   const el=$('#ibWrap');if(!el)return;
+  const grouped=!!RAWIDX||DEMO;   // ชื่องานยังไม่มา = จับกลุ่มไม่ได้ อย่าโชว์ตัวเลขผิด
   const nGrp=(()=>{try{return todoGroups().filter(g=>!g.items.every(x=>isFeeJob(x.id))).length}catch(e){return 0}})();
+  const nJob=(()=>{try{return todoList().length}catch(e){return INBOX.length}})();
   const title=r=>`${r.job_id?esc(r.job_id)+(r.text?' — ':''):''}${esc(r.text||'')}`;
   const editBlk=r=>`<div class="ibDet">
       <input id="ibeJob" placeholder="เลขงาน เช่น MD-1401" value="${esc(r.job_id||'')}" style="width:100%;margin-bottom:6px">
@@ -878,7 +889,7 @@ function renderInbox(){
       <input id="ibJob" placeholder="เลขงาน (ไม่จำได้ เว้นว่างได้)">
       <input id="ibTxt" placeholder="ดีเทล/หัวข้อ เช่น เสื้อโปโลคุณบี ด่วน">
       <button class="btnG" id="ibAdd" style="justify-content:center">＋ ใส่เข้า inbox</button></div>`:''}
-    ${INBOX.length?`<div class="ibGo"><div>งานพวกนี้รวมเป็น <b>${nGrp} รายการ</b> รอลงแผน</div>
+    ${INBOX.length?`<div class="ibGo"><div>${grouped?`งานพวกนี้รวมเป็น <b>${nGrp} รายการ</b> รอลงแผน`:`มี <b>${nJob} งาน</b> รอลงแผน`}</div>
       <button class="btnG" id="ibToTodo">ไปหน้า รอลงแผน →</button></div>`:''}
     <div class="ibList">
       ${INBOX.map(r=>row(r,false)).join('')||'<div style="color:var(--mut);padding:8px 0;font-size:12.5px">ไม่มีงานรอรับ 🎉</div>'}
@@ -1106,8 +1117,12 @@ function visible(skipKpi){
       const da=na&&na.plan_date?D(na.plan_date):new Date(9e12),db=nb&&nb.plan_date?D(nb.plan_date):new Date(9e12);
       return da-db});
 }
+function updTodoBadge(){const b=$('#nTodo');if(!b)return;
+  let n=0;try{n=todoList().length}catch(e){}
+  b.textContent=n;b.className='badge'+(n?'':' zero')}
 function render(){
   fillSel('#fPic',PICS,filt.pic);
+  updTodoBadge();
   const sales=[...new Set(Object.values(PROC).filter(p=>p.tracked!==false)
     .map(p=>(JOBS[p.job_id]||{}).sale_name||'(ไม่ระบุ)'))].sort();
   fillSel('#fSale',sales,filt.sale);
