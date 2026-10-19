@@ -100,6 +100,20 @@ main{max-width:1200px;margin:0 auto;padding:12px 16px 120px}
 .tag.o{background:var(--warn-bg);border-color:transparent;color:var(--warn-ink)}
 .tag.i{background:var(--info-bg);border-color:transparent;color:var(--info-ink)}
 .tag.pic{background:var(--brand-soft);border-color:transparent;color:var(--brand);font-weight:600}
+.tdHint{font-size:12.5px;color:var(--ink-2);margin-bottom:10px}
+.tdCard{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:var(--r);box-shadow:var(--shadow);padding:13px 15px;margin-bottom:10px;max-width:900px}
+.tdHead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.tdTitle{font-family:var(--font-display);font-weight:700;font-size:15.5px}
+.tdSub{font-size:12px;color:var(--ink-3);margin-top:2px}
+.tdTxt{font-size:13px;color:var(--ink-2);margin:7px 0 0;line-height:1.5}
+.tdBtns{display:flex;align-items:center;gap:10px;margin-top:11px;flex-wrap:wrap}
+.tdBtns .btnG{font-size:13.5px;padding:8px 16px}
+.tdNote{font-size:11.5px;color:var(--ink-3)}
+.tdSo{font-size:11.5px;color:var(--ink-3);font-weight:500}
+.tdOnes{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;padding-top:9px;border-top:1px dashed var(--line-2)}
+.tdOnes .btn2{font-size:12px;padding:4px 10px}
+.tag.grp{background:var(--info-bg);border-color:transparent;color:var(--info-ink);font-weight:600;cursor:pointer}
+.tag.grp:hover{filter:brightness(.95)}
 .tag.wo{background:var(--good-bg);border-color:transparent;color:var(--good-ink)}
 .tag.wo.miss{background:var(--warn-bg);color:var(--warn-ink)}
 .pill{display:inline-flex;align-items:center;gap:4px;padding:1px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
@@ -390,6 +404,7 @@ body.supview .ssRow img{border-color:#ddd9cf}
     <button data-v="cal">ปฏิทิน</button>
     <button data-v="gantt">Timeline</button>
     <button data-v="sup">ซัพพลายเออร์ <span class="badge zero" id="nSup">0</span></button>
+    <button data-v="todo">รอลงแผน <span class="badge zero" id="nTodo">0</span></button>
     <button data-v="kpi">KPI</button>
   </nav>
   <span class="sp"></span>
@@ -418,6 +433,7 @@ body.supview .ssRow img{border-color:#ddd9cf}
   <div id="ganttWrap"></div>
   <div id="supWrap"></div>
   <div id="kpiWrap"></div>
+  <div id="todoWrap"></div>
 </main>
 
 <div id="ovl"></div>
@@ -569,6 +585,40 @@ function imgOf(id){const p=PROC[id]||{},j=JOBS[id]||{};
   if(dm)return 'https://drive.google.com/thumbnail?id='+dm[1]+'&sz=w400';
   if(/drive\.google\.com\/drive\/folders/.test(u))return'';   // ลิงก์โฟลเดอร์ แสดงไม่ได้
   return u;}
+/* ---- กรุ๊ปงาน: งานชุดเดียวกัน = SO เดียวกัน + แบบ(รหัสสินค้า)เดียวกัน · ซอยเป็นเลขงานตามไซส์ ---- */
+function groupKey(id){
+  const j=JOBS[id]||(RAWIDX&&RAWIDX[id])||{},nm=j.name||'';
+  const so=(nm.match(/SO\d{6,}/)||[])[0]||((j.so_no||'').match(/SO\d{6,}/)||[])[0]||'';
+  return so||'';            // รหัสสินค้าเป็นรหัสเสื้อเปล่า ใช้แยกแบบไม่ได้ จึงจับกลุ่มด้วยเลขออเดอร์
+}
+function groupLabel(k){return 'ออเดอร์ '+(k||'')}
+const SZRE='(?:6XL|5XL|4XL|3XL|2XL|XXL|XL|XS|S|M|L)';
+function designNorm(nm){      // ตัดไซส์/จำนวน/รหัสออก เหลือ "แบบ+สี" ที่ใช้แยกงานที่รันคนละรอบ
+  let x=nm||'';
+  x=x.replace(/^.*?\/(?:SO\d{6,})\//,'');
+  x=x.replace(/MPD\d+-\d+|CO\d+|CT-\d+|SO\d+/g,'');
+  x=x.replace(/\[[^\]]*\]|\(ref:[^)]*\)/g,'');
+  x=x.replace(/\d{4}[A-Z]{2,4}\d{2,6}(?:-\w+)?/g,'');
+  x=x.replace(/จำนวน\s*:?\s*[\d,.]+\s*(?:ตัว|ใบ|ชิ้น|รายการ)/g,'');
+  x=x.replace(/ส่ง\d{1,2}\/\d{1,2}\/\d{4}/g,'');
+  x=x.replace(/ทีมขาย\s*:.*$/,'');
+  x=x.replace(new RegExp('(?:ไซส์|ไซซ์|size)\\s*'+SZRE+'\\b','gi'),'');
+  x=x.replace(new RegExp('\\s'+SZRE+'(?=\\s|$)','g'),'');
+  return x.replace(/[\s/\-–·,]+/g,' ').trim().slice(0,70);
+}
+function designKey(id){       // คีย์จัดกลุ่มจริง = ออเดอร์ + แบบ + สี (ไซส์รวมกันได้)
+  const j=JOBS[id]||(RAWIDX&&RAWIDX[id])||{},nm=j.name||'';
+  const so=groupKey(id); const d=designNorm(nm);
+  if(!so&&!d)return 'เดี่ยว:'+id;
+  return (so||'-')+' ‖ '+(d||id);
+}
+function isFeeJob(id){        // ค่าบริการจัดส่ง ฯลฯ ไม่ใช่งานผลิต ไม่ต้องลงแผน
+  const j=JOBS[id]||(RAWIDX&&RAWIDX[id])||{};
+  return /ค่าบริการจัดส่ง|ค่าจัดส่ง|ค่าขนส่ง/.test(j.name||'');
+}
+function memberIds(id){const m=(PROC[id]||{}).member_ids||'';return m?m.split(',').filter(Boolean):[]}
+function buildGroups(ids){const g={};ids.forEach(id=>{const k=groupKey(id);if(k)(g[k]=g[k]||[]).push(id)});return g}
+function groupQty(ids){let t=0;for(const id of ids){const q=guessQty((JOBS[id]||{}).name);if(!q)return null;t+=q}return t}
 function keyOf(id){   // Supabase Storage รับเฉพาะ ASCII — เลขงานภาษาไทยต้องแปลงก่อน
   let s=(id||'').replace(/[^A-Za-z0-9._-]/g,'-').replace(/-+/g,'-').replace(/^[-.]+|[-.]+$/g,'');
   if(!s){let h=0;for(const c of (id||'x'))h=(h*31+c.charCodeAt(0))>>>0;s='job-'+h.toString(36)}
@@ -967,7 +1017,22 @@ function wizStep3(j,flags){
         ({error}=await sb.from('milestones').insert(rows.map(({baseline_date,...r})=>r)));
       if(error)throw error;
       logEvent(j.job_id,'เปิดงาน','',`${rows.length} ขั้น · ${flags.need_fabric?'ผ้าใหม่':''} ${flags.need_sewing?'เย็บใหม่':''} สกรีน${flags.screen_where}`);
-      $('#wiz').classList.remove('on');toast('เปิดงานแล้ว ✓');loadAll();
+      const sib=(window.__planGroup||[]).filter(x=>x&&x!==j.job_id);window.__planGroup=null;
+      if(sib.length){        // รวมไซส์เป็นงานเดียว เก็บเลขงานน้องไว้ในช่อง member_ids (ค้นหาด้วยเลขไหนก็เจอ)
+        await sb.from('procurement').upsert({job_id:j.job_id,need_fabric:flags.need_fabric,
+          need_sewing:flags.need_sewing,screen_where:flags.screen_where,pic:flags.pic,tracked:true,
+          member_ids:sib.join(',')});
+        logEvent(j.job_id,'รวมไซส์','',sib.length+' เลขงาน: '+sib.join(', '));
+        for(const sid of sib){
+          const ib=INBOX.find(x=>x.job_id===sid);
+          if(ib)await sb.from('inbox').update({done_at:new Date().toISOString(),done_by:cfg.who}).eq('id',ib.id);
+        }
+      }
+      const ib0=INBOX.find(x=>x.job_id===j.job_id);
+      if(ib0)await sb.from('inbox').update({done_at:new Date().toISOString(),done_by:cfg.who}).eq('id',ib0.id);
+      $('#wiz').classList.remove('on');
+      toast(sib.length?('ลงแผนแล้ว ✓ รวม '+(sib.length+1)+' ไซส์เป็นงานเดียว'):'เปิดงานแล้ว ✓');
+      loadInbox();loadAll();
     }catch(e){toast('บันทึกไม่ได้: '+e.message)}
   };
 }
@@ -991,7 +1056,8 @@ function visible(skipKpi){
       if(filt.pic&&(PROC[id].pic||'')!==filt.pic)return false;
       if(filt.sale&&(j.sale_name||'(ไม่ระบุ)')!==filt.sale)return false;
       if(!skipKpi&&filt.kpi&&!kpiMatch(id,filt.kpi))return false;
-      if(s&&!((id||'')+(j.name||'')+(j.customer||'')).toLowerCase().includes(s))return false;
+      if(filt.grp&&groupKey(id)!==filt.grp)return false;
+      if(s&&!((id||'')+(j.name||'')+(j.customer||'')+((PROC[id]||{}).member_ids||'')).toLowerCase().includes(s))return false;
       return true})
     .sort((a,b)=>{const na=nextMs(a),nb=nextMs(b);
       const da=na&&na.plan_date?D(na.plan_date):new Date(9e12),db=nb&&nb.plan_date?D(nb.plan_date):new Date(9e12);
@@ -1012,7 +1078,9 @@ function render(){
   const doneCnt=allIds.filter(id=>jobDone(id)).length;
   const supPend=new Set();let supCnt=0;
   baseIds.forEach(id=>msOf(id).forEach(m=>{if(!m.actual_date&&m.supplier){supPend.add(m.supplier);supCnt++}}));
-  $('#stat').textContent=filt.kpi?'กำลังกรอง — กดการ์ดตัวเลขซ้ำเพื่อดูทั้งหมด':'';
+  $('#stat').innerHTML=filt.grp?`กำลังดูเฉพาะชุด <b>${esc(groupLabel(filt.grp))}</b> <button class="btn2" id="grpClear" style="padding:2px 9px;font-size:11.5px">✕ ดูทั้งหมด</button>`
+    :(filt.kpi?'กำลังกรอง — กดการ์ดตัวเลขซ้ำเพื่อดูทั้งหมด':'');
+  const gc=$('#grpClear');if(gc)gc.onclick=()=>{filt.grp='';render()};
   $('#nRun').textContent=baseIds.length;$('#nRun').className='badge'+(late?'':' zero');
   $('#nSup').textContent=supCnt;$('#nSup').className='badge zero';
   $('#kpis').innerHTML=[
@@ -1031,12 +1099,13 @@ function render(){
     render()});
   $('#topRow').style.display=view==='running'?'flex':'none';
   if(view==='running')renderInbox();
-  ['running','calWrap','ganttWrap','supWrap','kpiWrap'].forEach(x=>$('#'+x).style.display='none');
+  ['running','calWrap','ganttWrap','supWrap','kpiWrap','todoWrap'].forEach(x=>$('#'+x).style.display='none');
   if(view==='running'){$('#running').style.display='grid';renderRunning(ids)}
   if(view==='cal'){$('#calWrap').style.display='block';renderCal(ids)}
   if(view==='gantt'){$('#ganttWrap').style.display='block';renderGantt(ids)}
   if(view==='sup'){$('#supWrap').style.display='block';renderSup(ids)}
   if(view==='kpi'){$('#kpiWrap').style.display='block';renderKPI()}
+  if(view==='todo'){$('#todoWrap').style.display='block';renderTodo()}
 }
 function fillSel(q,arr,cur){const el=$(q);const first=el.options[0].outerHTML;
   el.innerHTML=first+arr.map(x=>`<option ${x===cur?'selected':''}>${esc(x)}</option>`).join('')}
@@ -1048,6 +1117,12 @@ function pathTags(p){const t=[];if(p.need_fabric)t.push('<span class="tag f">ผ
   else if(p.screen_where==='ใน')t.push('<span class="tag i">สกรีนใน</span>');
   return t.join('')}
 function renderRunning(ids){
+  const G=buildGroups(ids);
+  const seen=new Set(),ord=[];        // งานชุดเดียวกันเรียงติดกัน แต่ลำดับความเร่งด่วนเดิมยังอยู่
+  ids.forEach(id=>{if(seen.has(id))return;
+    const k=groupKey(id),mem=(k&&G[k].length>1)?G[k]:[id];
+    mem.forEach(m=>{if(!seen.has(m)){seen.add(m);ord.push(m)}})});
+  ids=ord;
   $('#running').innerHTML=ids.map(id=>{
     const j=JOBS[id]||{},p=PROC[id]||{},pr=progress(id),n=nextMs(id),h=jobDone(id)?'good':health(id);
     const im=imgOf(id);
@@ -1061,10 +1136,13 @@ function renderRunning(ids){
         <div style="flex:1;min-width:0">
           <div class="id">${esc(id)} <span class="due">· due ${j.due_date?thDate(j.due_date):'—'}${p.internal_due?` · <b style="color:var(--brand)">ภายใน ${thDate(p.internal_due)}</b>`:''}</span></div>
           <div class="nm">${j.name?esc(j.name):'<i style="color:var(--ink-3)">⏳ รอข้อมูลจาก raw</i>'}</div>
-          ${pathTags(p)}${p.need_sewing?(WOS[id]?'<span class="tag wo">📄 ใบงานแล้ว</span>':'<span class="tag wo miss">📄 ยังไม่ทำใบงาน</span>'):''}${p.pic?`<span class="tag pic">${esc(p.pic)}</span>`:''}
+          ${pathTags(p)}${p.need_sewing?(WOS[id]?'<span class="tag wo">📄 ใบงานแล้ว</span>':'<span class="tag wo miss">📄 ยังไม่ทำใบงาน</span>'):''}${p.pic?`<span class="tag pic">${esc(p.pic)}</span>`:''}${(()=>{const mem=memberIds(id);return mem.length?`<span class="tag grp" title="${esc(mem.join(', '))}">🔗 รวม ${mem.length+1} ไซส์</span>`:''})()}${(()=>{const k=groupKey(id),m=k?G[k]:null;if(!m||m.length<2)return'';
+            const q=groupQty(m);return `<span class="tag grp" data-g="${esc(k)}" title="${esc(m.join(', '))}">🔗 ออเดอร์เดียวกัน ${m.length} งาน${q?' · '+q.toLocaleString()+' ตัว':''}</span>`})()}
           <div class="pbar"><i style="width:${pr.total?pr.done/pr.total*100:0}%"></i></div>
         </div></div>
       <div class="wait">${pr.done}/${pr.total} ขั้น · ${wait}</div></div>`}).join('')||'<div style="color:var(--mut);padding:30px;text-align:center">ยังไม่มีงานบนบอร์ด — กด ＋ เปิดงาน</div>';
+  $$('#running .tag.grp').forEach(t=>t.onclick=e=>{e.stopPropagation();
+    filt.grp=filt.grp===t.dataset.g?'':t.dataset.g;render()});
   $$('#running .jcard').forEach(c=>c.onclick=()=>openDrawer(c.dataset.id));
 }
 /* --- calendar --- */
@@ -1227,6 +1305,81 @@ function renderKPI(){
     :'<div style="color:var(--mut);padding:30px;text-align:center">ยังไม่มีงานจบครบทุกขั้นในช่วงที่เลือก</div>'}`;
   $('#kpiMon').onchange=e=>{kpiMonth=e.target.value;renderKPI()};
   $$('#kpiWrap tr[data-id]').forEach(r=>r.onclick=()=>openDrawer(r.dataset.id));
+}
+
+/* --- หน้า "รอลงแผน" : งานที่ยังไม่มีแผน รวมเป็นชุด กดลงแผนทีเดียวทั้งชุดได้ --- */
+function todoList(){
+  const out=[];
+  INBOX.forEach(r=>{ if(r.job_id) out.push({id:r.job_id,txt:r.text||'',src:'inbox',ib:r.id}) });
+  Object.values(PROC).filter(p=>p.tracked!==false).forEach(p=>{
+    if((MS[p.job_id]||[]).length) return;
+    if(out.some(x=>x.id===p.job_id)) return;
+    out.push({id:p.job_id,txt:(JOBS[p.job_id]||{}).name||'',src:'board'});
+  });
+  return out;
+}
+function todoGroups(){
+  const g={},L=todoList();
+  L.forEach(it=>{
+    const k=designKey(it.id);
+    (g[k]=g[k]||{key:k,items:[],due:null,txt:''}).items.push(it);
+    const j=JOBS[it.id]||{};
+    if(j.due_date&&(!g[k].due||j.due_date<g[k].due))g[k].due=j.due_date;
+    if(!g[k].txt&&it.txt)g[k].txt=it.txt;
+  });
+  return Object.values(g).sort((a,b)=>(a.due||'9999')<(b.due||'9999')?-1:1);
+}
+function renderTodo(){
+  if(!RAWIDX&&!DEMO&&!window.__rawBusy){          // งานที่ยังไม่เปิด ต้องอ่านชื่อจากชีทเพื่อจับกลุ่ม
+    window.__rawBusy=1;
+    $('#todoWrap').innerHTML='<div style="color:var(--mut);padding:30px;text-align:center">กำลังอ่านข้อมูลงานเพื่อจัดกลุ่ม...</div>';
+    buildRawIndex().catch(()=>{}).then(()=>{window.__rawBusy=0;if(view==='todo')renderTodo()});
+    return;
+  }
+  const G=todoGroups();
+  $('#nTodo').textContent=G.reduce((a,g)=>a+g.items.length,0);
+  $('#nTodo').className='badge'+(G.length?'':' zero');
+  const card=g=>{
+    const ids=g.items.map(x=>x.id);
+    const fee=ids.every(isFeeJob);
+    const title=(()=>{const p=(g.key||'').split(' ‖ ');
+      const d=p[1]&&p[1]!==ids[0]?p[1]:'';
+      return d?esc(d)+(p[0]&&p[0]!=='-'?' <span class="tdSo">'+esc(p[0])+'</span>':''):esc(ids[0])})();
+    const dd=g.due?(()=>{const n=Math.round((D(g.due)-today())/864e5);
+      return `<span class="pill ${n<0?'late':n<=3?'warn':'ok'}">ส่ง ${thDate(g.due)} · ${n<0?'เลย '+(-n)+' วัน':'อีก '+n+' วัน'}</span>`})():'<span class="pill muted">ยังไม่มีวันส่ง</span>';
+    return `<div class="tdCard">
+      <div class="tdHead">
+        <div><div class="tdTitle">${title}</div>
+          <div class="tdSub">${ids.length} ไซส์ · ${esc(ids.slice(0,10).join(', '))}${ids.length>10?' …':''}</div></div>
+        <div class="tdRight">${dd}</div></div>
+      ${g.txt?`<div class="tdTxt">${esc(g.txt)}</div>`:''}
+      <div class="tdBtns">
+        ${fee?`<button class="btn2 tdSkip" data-ids="${esc(ids.join(','))}">✓ ไม่ต้องลงแผน (ค่าจัดส่ง)</button>`
+             :`<button class="btnG tdPlan" data-ids="${esc(ids.join(','))}">＋ ลงแผน${ids.length>1?' (รวม '+ids.length+' ไซส์)':''}</button>`}
+        ${(!fee&&ids.length>1)?`<button class="btn2 tdOne" data-ids="${esc(ids.join(','))}">แยกลงทีละงาน</button>
+          <span class="tdNote">ลงครั้งเดียวได้ทั้ง ${ids.length} ไซส์ — ค้นหาด้วยเลขไหนก็เจอ</span>`:''}
+      </div>
+      <div class="tdOnes" style="display:none">${ids.map(x=>`<button class="btn2 tdSolo" data-id="${esc(x)}">＋ ${esc(x)}</button>`).join('')}</div>
+      </div>`};
+  $('#todoWrap').innerHTML=G.length?
+    `<div class="tdHint">งานที่ยังไม่มีแผน — กดปุ่มเดียวลงแผนได้ทั้งชุด แล้วไปทำงานต่อได้เลย</div>`+G.map(card).join('')
+    :'<div style="color:var(--mut);padding:40px;text-align:center">ลงแผนครบทุกงานแล้ว 🎉</div>';
+  $$('#todoWrap .tdPlan').forEach(b=>b.onclick=()=>{
+    const ids=b.dataset.ids.split(',');
+    window.__planGroup=ids.slice(1);
+    wizStep1(ids[0]);
+  });
+  $$('#todoWrap .tdOne').forEach(b=>b.onclick=()=>{
+    const box=b.closest('.tdCard').querySelector('.tdOnes');
+    box.style.display=box.style.display==='none'?'flex':'none'});
+  $$('#todoWrap .tdSolo').forEach(b=>b.onclick=()=>{window.__planGroup=null;wizStep1(b.dataset.id)});
+  $$('#todoWrap .tdSkip').forEach(b=>b.onclick=async()=>{
+    for(const id of b.dataset.ids.split(',')){
+      const ib=INBOX.find(x=>x.job_id===id);
+      if(ib&&!DEMO)await sb.from('inbox').update({done_at:new Date().toISOString(),done_by:cfg.who}).eq('id',ib.id);
+      INBOX=INBOX.filter(x=>x!==ib);
+    }
+    toast('เคลียร์แล้ว ✓');renderTodo();updInboxBadge&&updInboxBadge();});
 }
 
 /* --- read-only supplier share page (?sup=ชื่อซัพ) --- */
@@ -1528,6 +1681,26 @@ const SHIRT_COLORS=[
  {n:'ดำ',c:'#232323'},{n:'น้ำตาล',c:'#7a5236'},{n:'กรม',c:'#20304e'},{n:'ฟ้า',c:'#7fb3d9'},
  {n:'เขียว',c:'#2f7a4c'},{n:'เขียวขี้ม้า',c:'#5c6238'},{n:'แดง',c:'#b8322f'},{n:'ส้ม',c:'#e0762e'},
  {n:'เหลือง',c:'#e8c93e'},{n:'ชมพู',c:'#e8a7bb'},{n:'ม่วง',c:'#6d5390'}];
+/* ---- รูปเสื้อจริง: patterns/<แพทเทิร์น>/<สี>.png บน Supabase (มาจากคลังภาพ merchmaker-shop) ---- */
+const SHIRT_IMG_BASE='https://nbjkuihtdnbetsphhlpr.supabase.co/storage/v1/object/public/job-images/patterns/';
+const SHIRT_FOLDER={
+ basic:{'ขาว':'WHITE','ครีม':'CREAM','เทาอ่อน':'CLOUD','เทาเข้ม':'GREY','ดำ':'BLACK','น้ำตาล':'BROWN_65M','กรม':'DARK_BLUE','ฟ้า':'BLUE','แดง':'RED_7D','ชมพู':'PINK'},
+ oversize:{'ขาว':'WHITE','ครีม':'BEIGE','ดำ':'BLACK','น้ำตาล':'BROWN','ฟ้า':'BLUE_4L','เขียว':'GREEN','เขียวขี้ม้า':'DARK_MINT_1','ส้ม':'ORANGE','ม่วง':'VIOLET'},
+ boxy:{'ขาว':'WHITE','ดำ':'BLACK','น้ำตาล':'BROWN','กรม':'DARK_BLUE'},
+ babytee:{'ขาว':'WHITE','ดำ':'BLACK','ชมพู':'PINK_PASTEL'}};
+function shirtPhoto(pk,color){            // คืน url รูปจริง ถ้ามีสีนั้น ไม่มีก็คืนตัวขาวไว้ย้อมสี
+  const m=SHIRT_FOLDER[pk]; if(!m)return null;
+  const nm=(SHIRT_COLORS.find(c=>c.c===color)||{}).n||'';
+  const f=m[nm]||m['ขาว']; if(!f)return null;
+  return {url:SHIRT_IMG_BASE+pk+'/'+f+'.png',exact:!!m[nm]};
+}
+function shirtBox(pk,color,px){           // <div> รูปเสื้อ ถ้าไม่มีรูปค่อย fallback เป็น SVG
+  const p=shirtPhoto(pk,color);
+  if(!p)return shirtSVG(pk,color);
+  const tint=p.exact?'':`filter:none;background:${color};-webkit-mask-image:url('${p.url}');mask-image:url('${p.url}');-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center`;
+  if(p.exact)return `<img src="${p.url}" style="width:100%;height:100%;object-fit:contain" loading="lazy">`;
+  return `<div style="width:100%;height:100%;${tint}"></div>`;
+}
 function shirtSVG(pk,color){
   color=color||'#f4f4ef';
   const dark=(()=>{const h=color.replace('#','');const r=parseInt(h.substr(0,2),16),g=parseInt(h.substr(2,2),16),b=parseInt(h.substr(4,2),16);
@@ -1640,7 +1813,7 @@ function renderWOForm(){
 function updWoMain(){
   const w=WOCUR,el=$('#woMain');if(!el)return;
   if(w.main_image)el.innerHTML=`<img src="${esc(w.main_image)}" style="width:100%;height:100%;object-fit:cover">`;
-  else el.innerHTML=shirtSVG(w.pattern_key,w.shirt_color);
+  else el.innerHTML=shirtBox(w.pattern_key,w.shirt_color);
 }
 function updWoTot(){const t=woSum(),g=parseInt(WOCUR.qty_total)||0;const el=$('#woTot');
   el.textContent=`รวม ${t.toLocaleString()} ตัว`+(g?` / จำนวนงาน ${g.toLocaleString()}`:'');
@@ -1763,7 +1936,7 @@ function thFull(d){if(!d)return'-';const x=D(d);return `${String(x.getDate()).pa
 function renderWOPrint(w){
   const j=JOBS[w.job_id]||{};
   const im=w.main_image||'';
-  const imHtml=im?`<img src="${esc(im)}">`:`<div style="max-width:340px;margin:0 auto">${shirtSVG(w.pattern_key,w.shirt_color)}</div>`;
+  const imHtml=im?`<img src="${esc(im)}">`:`<div style="max-width:340px;height:300px;margin:0 auto">${shirtBox(w.pattern_key,w.shirt_color)}</div>`;
   // โชว์ทุกไซส์ของแพทเทิร์นเสมอ ไซส์ที่ไม่สั่ง = 0 (ห้ามโดดไซส์ ช่างจะสับสน)
   const useAll=(w.sizes||[]).filter(r=>r.size);
   const tot=(w.sizes||[]).reduce((s,r)=>s+(parseInt(r.qty)||0),0);
