@@ -112,6 +112,16 @@ main{max-width:1200px;margin:0 auto;padding:12px 16px 120px}
 .tdSo{font-size:11.5px;color:var(--ink-3);font-weight:500}
 .tdOnes{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;padding-top:9px;border-top:1px dashed var(--line-2)}
 .tdOnes .btn2{font-size:12px;padding:4px 10px}
+.tdRow{display:flex;gap:14px;align-items:flex-start}
+.tdPic{width:92px;height:92px;flex:none;background:var(--surface-2);border-radius:10px;display:flex;align-items:center;justify-content:center;padding:5px}
+.tdMid{flex:1;min-width:0}
+.tdFacts{display:flex;flex-wrap:wrap;gap:6px;margin:5px 0 4px}
+.tdFact{display:inline-flex;align-items:center;gap:5px;background:var(--surface-2);border-radius:999px;padding:2px 10px;font-size:12px;color:var(--ink-2)}
+.tdFact.big{background:var(--brand-soft);color:var(--brand);font-weight:700;font-size:13.5px}
+.tdFact i{width:11px;height:11px;border-radius:50%;border:1px solid var(--line-2);display:inline-block}
+.ibGo{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--accent-soft);border-radius:9px;padding:8px 11px;margin:0 12px 8px;font-size:12.5px;color:var(--accent-ink)}
+.ibGo .btnG{padding:5px 11px;font-size:12px;white-space:nowrap}
+@media (max-width:640px){.tdPic{width:70px;height:70px}}
 .tag.grp{background:var(--info-bg);border-color:transparent;color:var(--info-ink);font-weight:600;cursor:pointer}
 .tag.grp:hover{filter:brightness(.95)}
 .tag.wo{background:var(--good-bg);border-color:transparent;color:var(--good-ink)}
@@ -616,6 +626,30 @@ function isFeeJob(id){        // ค่าบริการจัดส่ง �
   const j=JOBS[id]||(RAWIDX&&RAWIDX[id])||{};
   return /ค่าบริการจัดส่ง|ค่าจัดส่ง|ค่าขนส่ง/.test(j.name||'');
 }
+function jobName(id){const j=JOBS[id]||(RAWIDX&&RAWIDX[id])||{};return j.name||''}
+function parseQty(id){const m=jobName(id).replace(/,/g,'').match(/จำนวน\s*:?\s*(\d+(?:\.\d+)?)\s*(?:ตัว|ชิ้น|ใบ)/);
+  if(m)return Math.round(+m[1]);
+  const m2=jobName(id).replace(/,/g,'').match(/(\d{1,5})\s*ตัว/);return m2?+m2[1]:0}
+function parseShape(nm){const x=(nm||'').toLowerCase();
+  if(/boxy|บ็อกซี่|บ๊อกซี่/.test(x))return 'boxy';
+  if(/baby|เบบี้/.test(x))return 'babytee';
+  if(/oversize|โอเวอร์ไซ|drop.?shoulder|mm05/.test(x))return 'oversize';
+  if(/mm08|signature tee|ทรงปกติ|basic/.test(x))return 'basic';
+  return 'basic'}
+function parseColor(nm){const x=nm||'';
+  for(const c of SHIRT_COLORS){ if(x.includes('สี'+c.n)||x.includes(' '+c.n+' '))return c; }
+  if(/สีพิเศษ/.test(x))return {n:'สีพิเศษ',c:'#b9a88f'};
+  for(const [k,c] of [['ดำ','#232323'],['ขาว','#f4f4ef'],['ครีม','#efe6d0'],['กรม','#20304e'],['เทา','#6f6f6a'],['น้ำตาล','#7a5236'],['เขียว','#2f7a4c'],['ฟ้า','#7fb3d9'],['แดง','#b8322f'],['ชมพู','#e8a7bb'],['ม่วง','#6d5390'],['เหลือง','#e8c93e'],['ส้ม','#e0762e'],['เบจ','#d9c6a5']])
+    if(x.includes('สี'+k))return {n:k,c};
+  return null}
+function todoInfo(ids){
+  let qty=0,nm='';
+  ids.forEach(i=>{qty+=parseQty(i); if(!nm&&!isFeeJob(i))nm=jobName(i)});
+  const col=parseColor(nm)||{n:'ไม่ระบุสี',c:'#f4f4ef'};
+  const pat=parseShape(nm);
+  const PN={basic:'ทรงปกติ',oversize:'โอเวอร์ไซส์',boxy:'บ็อกซี่',babytee:'เบบี้ที'};
+  return {qty,pat,patName:PN[pat]||pat,col};
+}
 function memberIds(id){const m=(PROC[id]||{}).member_ids||'';return m?m.split(',').filter(Boolean):[]}
 function buildGroups(ids){const g={};ids.forEach(id=>{const k=groupKey(id);if(k)(g[k]=g[k]||[]).push(id)});return g}
 function groupQty(ids){let t=0;for(const id of ids){const q=guessQty((JOBS[id]||{}).name);if(!q)return null;t+=q}return t}
@@ -805,6 +839,7 @@ const thTs=ts=>new Date(ts).toLocaleString('th-TH',{day:'numeric',month:'short',
 let IBFORM=false,IBEXP=null,IBEDIT=null;
 function renderInbox(){
   const el=$('#ibWrap');if(!el)return;
+  const nGrp=(()=>{try{return todoGroups().filter(g=>!g.items.every(x=>isFeeJob(x.id))).length}catch(e){return 0}})();
   const title=r=>`${r.job_id?esc(r.job_id)+(r.text?' — ':''):''}${esc(r.text||'')}`;
   const editBlk=r=>`<div class="ibDet">
       <input id="ibeJob" placeholder="เลขงาน เช่น MD-1401" value="${esc(r.job_id||'')}" style="width:100%;margin-bottom:6px">
@@ -839,11 +874,15 @@ function renderInbox(){
       <input id="ibJob" placeholder="เลขงาน (ไม่จำได้ เว้นว่างได้)">
       <input id="ibTxt" placeholder="ดีเทล/หัวข้อ เช่น เสื้อโปโลคุณบี ด่วน">
       <button class="btnG" id="ibAdd" style="justify-content:center">＋ ใส่เข้า inbox</button></div>`:''}
+    ${INBOX.length?`<div class="ibGo"><div>งานพวกนี้รวมเป็น <b>${nGrp} รายการ</b> รอลงแผน</div>
+      <button class="btnG" id="ibToTodo">ไปหน้า รอลงแผน →</button></div>`:''}
     <div class="ibList">
       ${INBOX.map(r=>row(r,false)).join('')||'<div style="color:var(--mut);padding:8px 0;font-size:12.5px">ไม่มีงานรอรับ 🎉</div>'}
       ${INDONE.length?`<div class="supsec" style="padding-left:0">จบแล้วล่าสุด — กดเพื่อดู/ดึงกลับ</div>${INDONE.map(r=>row(r,true)).join('')}`:''}
     </div></div>`;
   $('#ibPlus').onclick=()=>{IBFORM=!IBFORM;renderInbox();if(IBFORM)$('#ibJob').focus()};
+  const gt=$('#ibToTodo');if(gt)gt.onclick=()=>{view='todo';
+    $$('.tabs [data-v]').forEach(x=>x.classList.toggle('on',x.dataset.v==='todo'));render();window.scrollTo(0,0)};
   const add=async()=>{
     const jb=$('#ibJob').value.trim(),tx=$('#ibTxt').value.trim();
     if(!jb&&!tx)return;
@@ -1347,10 +1386,19 @@ function renderTodo(){
       return d?esc(d)+(p[0]&&p[0]!=='-'?' <span class="tdSo">'+esc(p[0])+'</span>':''):esc(ids[0])})();
     const dd=g.due?(()=>{const n=Math.round((D(g.due)-today())/864e5);
       return `<span class="pill ${n<0?'late':n<=3?'warn':'ok'}">ส่ง ${thDate(g.due)} · ${n<0?'เลย '+(-n)+' วัน':'อีก '+n+' วัน'}</span>`})():'<span class="pill muted">ยังไม่มีวันส่ง</span>';
+    const inf=todoInfo(ids);
     return `<div class="tdCard">
-      <div class="tdHead">
-        <div><div class="tdTitle">${title}</div>
-          <div class="tdSub">${ids.length} ไซส์ · ${esc(ids.slice(0,10).join(', '))}${ids.length>10?' …':''}</div></div>
+      <div class="tdRow">
+        <div class="tdPic">${fee?'<span style="font-size:26px">🚚</span>':shirtBox(inf.pat,inf.col.c)}</div>
+        <div class="tdMid">
+          <div class="tdTitle">${title}</div>
+          <div class="tdFacts">${fee?'<span class="tdFact">ค่าจัดส่ง</span>':
+            `<span class="tdFact big">${inf.qty?inf.qty.toLocaleString()+' ตัว':'ไม่ระบุจำนวน'}</span>
+             <span class="tdFact">${esc(inf.patName)}</span>
+             <span class="tdFact"><i style="background:${inf.col.c}"></i>${esc(inf.col.n)}</span>
+             <span class="tdFact">${ids.length} ไซส์</span>`}</div>
+          <div class="tdSub">${esc(ids.slice(0,10).join(', '))}${ids.length>10?' …':''}</div>
+        </div>
         <div class="tdRight">${dd}</div></div>
       ${g.txt?`<div class="tdTxt">${esc(g.txt)}</div>`:''}
       <div class="tdBtns">
