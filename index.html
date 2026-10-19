@@ -627,9 +627,13 @@ function isFeeJob(id){        // ค่าบริการจัดส่ง �
   return /ค่าบริการจัดส่ง|ค่าจัดส่ง|ค่าขนส่ง/.test(j.name||'');
 }
 function jobName(id){const j=JOBS[id]||(RAWIDX&&RAWIDX[id])||{};return j.name||''}
-function parseQty(id){const m=jobName(id).replace(/,/g,'').match(/จำนวน\s*:?\s*(\d+(?:\.\d+)?)\s*(?:ตัว|ชิ้น|ใบ)/);
+function parseQty(id){const t=jobName(id).replace(/,/g,'');
+  const r=t.match(/รวม(?:จำนวน)?\s*:?\s*(\d+(?:\.\d+)?)\s*(?:ตัว|ชิ้น|ใบ)/);   // "รวม 40 ตัว" ชนะทุกอย่าง
+  if(r)return Math.round(+r[1]);
+  const m=t.match(/จำนวน\s*:?\s*(\d+(?:\.\d+)?)\s*(?:ตัว|ชิ้น|ใบ)/);
   if(m)return Math.round(+m[1]);
-  const m2=jobName(id).replace(/,/g,'').match(/(\d{1,5})\s*ตัว/);return m2?+m2[1]:0}
+  const all=t.match(/(\d+(?:\.\d+)?)\s*(?:ตัว|ชิ้น|ใบ)/g)||[];        // ชื่องานที่ไล่ไซส์ทีละบรรทัด = บวกรวมให้
+  return all.reduce((a,x)=>a+Math.round(parseFloat(x)),0)}
 function parseShape(nm){const x=(nm||'').toLowerCase();
   if(/boxy|บ็อกซี่|บ๊อกซี่/.test(x))return 'boxy';
   if(/baby|เบบี้/.test(x))return 'babytee';
