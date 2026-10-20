@@ -121,8 +121,11 @@ main{max-width:1200px;margin:0 auto;padding:12px 16px 120px}
 .tdQm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:10px;
   font-family:var(--font-display);font-size:40px;font-weight:700;color:var(--warn-ink);background:rgba(120,110,80,.13)}
 .tdIds{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
-.tdId{font-size:11.5px;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--line-2);border-radius:6px;padding:1px 7px;text-decoration:none;display:inline-block}
-a.tdId:hover{border-color:var(--accent);color:var(--accent-ink)}
+.tdId{font-size:11.5px;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--line-2);border-radius:6px;padding:1px 7px;display:inline-flex;align-items:center;gap:5px;cursor:pointer;user-select:none}
+.tdId:hover{border-color:var(--accent)}
+.tdId.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.tdId.on::before{content:'✓ '}
+.tdId .tdGo{color:var(--accent-ink);text-decoration:none;font-size:12px}
 .tdPick{display:inline-flex;align-items:center;gap:5px;font-size:12px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:8px;padding:3px 9px;cursor:pointer}
 .tdPick input{accent-color:var(--accent);width:15px;height:15px;margin:0}
 .tdOnes .btnG{font-size:12.5px;padding:5px 12px}
@@ -137,6 +140,14 @@ a.tdId:hover{border-color:var(--accent);color:var(--accent-ink)}
   .tdRow{flex-wrap:wrap}
   .tdRight{order:3;flex-basis:100%;margin-top:2px}   /* มือถือ: ป้ายวันส่งลงมาอยู่บรรทัดของมันเอง ชื่องานจะได้ความกว้างเต็ม */
   .tdTitle{font-size:14.5px}}
+.runSo{grid-column:1/-1;font-family:var(--font-display);font-size:12.5px;font-weight:700;color:var(--accent-ink);
+  background:var(--accent-soft);border-radius:8px;padding:5px 12px;margin:6px 0 0}
+.jIds{display:flex;flex-wrap:wrap;gap:4px;margin:3px 0 2px}
+.jId{font-size:11px;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--line-2);border-radius:5px;padding:0 6px;cursor:pointer}
+.jId:hover{border-color:var(--accent);color:var(--accent-ink)}
+.jGo{float:right;display:inline-flex;gap:5px}
+.jGo .btn2,.jGo .btnG{font-size:11px;padding:2px 8px;text-decoration:none}
+.tdCard.flash{outline:3px solid var(--accent);outline-offset:2px}
 .tag.grp{background:var(--info-bg);border-color:transparent;color:var(--info-ink);font-weight:600;cursor:pointer}
 .tag.grp:hover{filter:brightness(.95)}
 .tag.wo{background:var(--good-bg);border-color:transparent;color:var(--good-ink)}
@@ -889,26 +900,18 @@ function renderInbox(){
       <input id="ibeTxt" placeholder="ดีเทล/หัวข้อ" value="${esc(r.text||'')}" style="width:100%;margin-bottom:8px">
       <div class="btns"><button class="btnG ibeSave" data-i="${r.id}">💾 บันทึก</button>
         <button class="btn2 ibeCancel">ยกเลิก</button></div></div>`;
-  const detBlk=r=>`<div class="ibDet">
-      <div class="txt">${esc(r.text||'(ไม่มีดีเทล)')}</div>
-      <div style="font-size:11px;color:var(--ink-3);margin-bottom:8px">เข้าโดย ${esc(r.created_by||'?')} · ${thTs(r.created_at)}${r.done_at?` · รับโดย ${esc(r.done_by||'?')} · ${thTs(r.done_at)}`:''}</div>
-      <div class="btns">
-        ${r.done_at?`<button class="btn2 ibBack" data-i="${r.id}">↩ ดึงกลับมารอรับ</button>`:`
-          <button class="btn2 ibEdit" data-i="${r.id}">✏️ แก้ไข</button>
-          ${r.job_id?`<button class="btnP ibOpen" data-i="${r.id}">▶ เปิดงาน ${esc(r.job_id)}</button>`
-                    :`<button class="btnP ibEdit" data-i="${r.id}" data-job="1">🔗 ใส่เลขงาน</button>`}
-          <button class="btn2 ibClr" data-i="${r.id}">✓ เคลียร์</button>`}
-      </div></div>`;
   const row=(r,done)=>{
-    const exp=IBEXP===r.id,a=ageTxt(r.created_at);
-    return `<div class="ibRow ${done?'done':''} ${exp?'exp':''}">
-      <div class="ibMain" data-x="${r.id}" title="กดเพื่อดูดีเทล/แก้ไข"><b>${title(r)||'(ว่าง)'}</b>
+    if(IBEDIT===r.id)return editBlk(r);
+    const a=ageTxt(r.created_at);
+    return `<div class="ibRow ${done?'done':''}">
+      <div class="ibMain" data-x="${r.id}" title="กดเพื่อไปที่การ์ดงานในหน้ารอลงแผน"><b>${title(r)||'(ว่าง)'}</b>
         <small>${done?`✓ รับโดย <b>${esc(r.done_by||'?')}</b> · ${thTs(r.done_at)}`:`${esc(r.created_by||'?')} · ${thTs(r.created_at)} · <span class="pill ${a.c}">${a.t}</span>`}</small></div>
-      ${!done&&!exp?`<span class="ibAct">
-        ${r.job_id?`<button class="btnP ibOpen" data-i="${r.id}" title="เปิดงาน">▶</button>`:''}
-        <button class="btn2 ibClr" data-i="${r.id}" title="เคลียร์">✓</button></span>`:''}
-      </div>
-      ${exp?(IBEDIT===r.id?editBlk(r):detBlk(r)):''}`};
+      <span class="ibAct">${done?`<button class="btn2 ibBack" data-i="${r.id}" title="ดึงกลับมารอรับ">↩</button>`:
+        `<button class="btn2 ibEdit" data-i="${r.id}" title="แก้ไข">✏️</button>
+         ${r.job_id?`<button class="btnP ibOpen" data-i="${r.id}" title="เปิดงาน ${esc(r.job_id)}">▶</button>`
+                   :`<button class="btnP ibEdit" data-i="${r.id}" data-job="1" title="ใส่เลขงาน">🔗</button>`}
+         <button class="btn2 ibClr" data-i="${r.id}" title="เคลียร์">✓</button>`}</span>
+      </div>`};
   el.innerHTML=`<div class="supbox ibBox">
     <h2>📥 งานเข้า ${INBOX.length?`<span class="cnt" style="background:var(--warn-bg);color:var(--warn-ink)">${INBOX.length}</span>`:''}
       <span class="sp" style="flex:1"></span>
@@ -937,10 +940,10 @@ function renderInbox(){
   const fa=$('#ibAdd');if(fa){fa.onclick=add;
     ['#ibJob','#ibTxt'].forEach(q=>{$(q).onkeydown=e=>{if(e.key==='Enter')add()}})}
   const find=id=>INBOX.find(x=>''+x.id===''+id)||INDONE.find(x=>''+x.id===''+id);
-  $$('#ibWrap .ibMain').forEach(m=>m.onclick=()=>{const id=+m.dataset.x;
-    IBEXP=IBEXP===id?null:id;IBEDIT=null;renderInbox()});
+  $$('#ibWrap .ibMain').forEach(m=>m.onclick=()=>{const r=find(m.dataset.x);
+    if(r)gotoTodo(r.job_id||'')});
   $$('#ibWrap .ibEdit').forEach(b=>b.onclick=e=>{e.stopPropagation();
-    IBEXP=+b.dataset.i;IBEDIT=+b.dataset.i;renderInbox();
+    IBEDIT=+b.dataset.i;renderInbox();
     (b.dataset.job?$('#ibeJob'):$('#ibeTxt'))?.focus()});
   $$('#ibWrap .ibeCancel').forEach(b=>b.onclick=()=>{IBEDIT=null;renderInbox()});
   $$('#ibWrap .ibeSave').forEach(b=>b.onclick=async()=>{const r=find(b.dataset.i);if(!r)return;
@@ -1184,7 +1187,9 @@ function render(){
     filt.kpi=(k&&filt.kpi!==k)?k:'';
     if(k==='donly'){filt.done=filt.kpi==='donly';$('#fDone').checked=filt.done}   // กดการ์ดจบแล้ว = เปิดโชว์งานจบให้เอง
     render()});
-  $('#topRow').style.display=view==='running'?'flex':'none';
+  $('#topRow').style.display=view==='running'?'block':'none';
+  $('#ibWrap').style.display=view==='running'?'':'none';
+  $('#boardRow').style.gridTemplateColumns=view==='running'?'':'1fr';
   if(view==='running')renderInbox();
   ['running','calWrap','ganttWrap','supWrap','kpiWrap','todoWrap'].forEach(x=>$('#'+x).style.display='none');
   if(view==='running'){$('#running').style.display='grid';renderRunning(ids)}
@@ -1203,31 +1208,64 @@ function pathTags(p){const t=[];if(p.need_fabric)t.push('<span class="tag f">ผ
   if(p.screen_where==='นอก'||p.screen_where==='จีน')t.push(`<span class="tag o">สกรีน${p.screen_where}</span>`);
   else if(p.screen_where==='ใน')t.push('<span class="tag i">สกรีนใน</span>');
   return t.join('')}
+function runGroups(ids){        // งานแบบเดียวกัน ออเดอร์เดียวกัน = การ์ดเดียว (ไซส์อยู่ข้างใน)
+  const g={},ord=[];
+  ids.forEach(id=>{const k=designKey(id);
+    if(!g[k]){g[k]={key:k,ids:[]};ord.push(g[k])}
+    g[k].ids.push(id)});
+  ord.forEach(x=>{x.so=(x.key||'').split(' ‖ ')[0];if(x.so==='-')x.so='';
+    x.due=x.ids.map(i=>(JOBS[i]||{}).due_date).filter(Boolean).sort()[0]||'';
+    x.lead=x.ids.reduce((a,b)=>{
+    const ma=msOf(a).length,mb=msOf(b).length;if(ma!==mb)return ma>mb?a:b;
+    const da=(JOBS[a]||{}).due_date||'9999',db=(JOBS[b]||{}).due_date||'9999';
+    if(da!==db)return da<db?a:b;return a<b?a:b})});
+  const n={};ord.forEach(x=>{const k=x.so||('~'+x.key);n[k]=(n[k]||0)+1});
+  ord.forEach(x=>{x.soCount=n[x.so||('~'+x.key)]});
+  const out=[],used=new Set();          // ออเดอร์เดียวกันอยู่ติดกัน แต่ลำดับความเร่งด่วนเดิมยังอยู่
+  ord.forEach(x=>{if(used.has(x))return;
+    out.push(x);used.add(x);
+    if(x.so)ord.forEach(y=>{if(!used.has(y)&&y.so===x.so){out.push(y);used.add(y)}})});
+  return out;
+}
+const HRANK={late:0,warn:1,good:2};
 function renderRunning(ids){
   const G=buildGroups(ids);
-  const seen=new Set(),ord=[];        // งานชุดเดียวกันเรียงติดกัน แต่ลำดับความเร่งด่วนเดิมยังอยู่
-  ids.forEach(id=>{if(seen.has(id))return;
-    const k=groupKey(id),mem=(k&&G[k].length>1)?G[k]:[id];
-    mem.forEach(m=>{if(!seen.has(m)){seen.add(m);ord.push(m)}})});
-  ids=ord;
-  $('#running').innerHTML=ids.map(id=>{
-    const j=JOBS[id]||{},p=PROC[id]||{},pr=progress(id),n=nextMs(id),h=jobDone(id)?'good':health(id);
+  const RG=runGroups(ids);
+  let lastSo=null;
+  $('#running').innerHTML=RG.map(grp=>{
+    let band='';
+    if(grp.so&&grp.soCount>1&&grp.so!==lastSo)band=`<div class="runSo">${esc(grp.so)} · ${grp.soCount} รายการ (ออเดอร์เดียวกัน)</div>`;
+    lastSo=grp.so||null;
+    const id=grp.lead,all=grp.ids,multi=all.length>1;
+    const j=JOBS[id]||{},p=PROC[id]||{};
+    const pr=multi?all.reduce((a,x)=>{const q=progress(x);return {done:a.done+q.done,total:a.total+q.total}},{done:0,total:0}):progress(id);
+    const n=multi?all.map(nextMs).filter(Boolean).sort((a,b)=>(a.plan_date||'9999')<(b.plan_date||'9999')?-1:1)[0]:nextMs(id);
+    const h=multi?(all.every(jobDone)?'good':all.map(x=>jobDone(x)?'good':health(x)).sort((a,b)=>HRANK[a]-HRANK[b])[0])
+                 :(jobDone(id)?'good':health(id));
     const im=imgOf(id);
     let wait='<span class="pill ok">✔ ครบทุกขั้นแล้ว</span>';
     if(n){const dl=n.plan_date?Math.round((D(n.plan_date)-today())/864e5):null;
       wait=`รอ: <b>${esc(n.label)}</b>${n.supplier?' @'+esc(n.supplier):''}`+
         (dl===null?'<span class="pill warn">ยังไม่ใส่วันแผน</span>':dl<0?`<span class="pill late">เลท ${-dl} วัน</span>`:dl===0?'<span class="pill warn">วันนี้</span>':`<span class="pill ok">อีก ${dl} วัน</span>`)}
-    return `<div class="jcard ${h}" data-id="${esc(id)}">
+    const head=multi?(designNorm(j.name||'')||id):id;
+    const nifty=niftyUrl(id);
+    return band+`<div class="jcard ${h}" data-id="${esc(id)}">
       <div class="jhead">
         ${im?`<img src="${esc(im)}" loading="lazy">`:'<div class="noimg">📷<span>แตะเพื่อใส่รูป</span></div>'}
         <div style="flex:1;min-width:0">
-          <div class="id">${esc(id)} <span class="due">· due ${j.due_date?thDate(j.due_date):'—'}${p.internal_due?` · <b style="color:var(--brand)">ภายใน ${thDate(p.internal_due)}</b>`:''}</span></div>
-          <div class="nm">${j.name?esc(j.name):'<i style="color:var(--ink-3)">⏳ รอข้อมูลจาก raw</i>'}</div>
+          <div class="id">${esc(head)} <span class="due">· due ${j.due_date?thDate(j.due_date):'—'}${p.internal_due?` · <b style="color:var(--brand)">ภายใน ${thDate(p.internal_due)}</b>`:''}</span></div>
+          ${multi?`<div class="jIds">${all.map(x=>`<span class="jId" data-one="${esc(x)}">${esc(x)}</span>`).join('')}</div>`
+                 :`<div class="nm">${j.name?esc(j.name):'<i style="color:var(--ink-3)">⏳ รอข้อมูลจาก raw</i>'}</div>`}
           ${pathTags(p)}${p.need_sewing?(WOS[id]?'<span class="tag wo">📄 ใบงานแล้ว</span>':'<span class="tag wo miss">📄 ยังไม่ทำใบงาน</span>'):''}${p.pic?`<span class="tag pic">${esc(p.pic)}</span>`:''}${(()=>{const mem=memberIds(id);return mem.length?`<span class="tag grp" title="${esc(mem.join(', '))}">🔗 รวม ${mem.length+1} ไซส์</span>`:''})()}${(()=>{const k=groupKey(id),m=k?G[k]:null;if(!m||m.length<2)return'';
             const q=groupQty(m);return `<span class="tag grp" data-g="${esc(k)}" title="${esc(m.join(', '))}">🔗 ออเดอร์เดียวกัน ${m.length} งาน${q?' · '+q.toLocaleString()+' ตัว':''}</span>`})()}
           <div class="pbar"><i style="width:${pr.total?pr.done/pr.total*100:0}%"></i></div>
         </div></div>
-      <div class="wait">${pr.done}/${pr.total} ขั้น · ${wait}</div></div>`}).join('')||'<div style="color:var(--mut);padding:30px;text-align:center">ยังไม่มีงานบนบอร์ด — กด ＋ เปิดงาน</div>';
+      <div class="wait">${pr.done}/${pr.total} ขั้น · ${wait}
+        <span class="jGo">${nifty?`<a class="btn2" href="${nifty}" target="_blank" rel="noopener" title="เปิดใน Nifty">↗ Nifty</a>`:''}${WOS[id]?`<button class="btn2 jWo" data-one="${esc(id)}">📄 ใบงาน</button>`:''}${pr.total?'':`<button class="btnG jPlan" data-one="${esc(id)}">＋ ลงแผน</button>`}</span>
+      </div></div>`}).join('')||'<div style="color:var(--mut);padding:30px;text-align:center">ยังไม่มีงานบนบอร์ด — กด ＋ เปิดงาน</div>';
+  $$('#running .jId,#running .jWo').forEach(t=>t.onclick=e=>{e.stopPropagation();openDrawer(t.dataset.one)});
+  $$('#running .jPlan').forEach(b=>b.onclick=e=>{e.stopPropagation();window.__planGroup=null;wizStep1(b.dataset.one)});
+  $$('#running .jGo a').forEach(a=>a.onclick=e=>e.stopPropagation());
   $$('#running .tag.grp').forEach(t=>t.onclick=e=>{e.stopPropagation();
     filt.grp=filt.grp===t.dataset.g?'':t.dataset.g;render()});
   $$('#running .jcard').forEach(c=>c.onclick=()=>openDrawer(c.dataset.id));
@@ -1423,6 +1461,16 @@ function todoGroups(){
   return L2.sort((a,b)=>(a.soDue+'|'+(a.so||a.key)+'|'+(a.due||'9999')+'|'+a.key)
                       < (b.soDue+'|'+(b.so||b.key)+'|'+(b.due||'9999')+'|'+b.key)?-1:1);
 }
+function gotoTodo(jid){        // จากกล่องงานเข้า -> การ์ดของงานนั้นในหน้ารอลงแผน
+  view='todo';$$('.tabs [data-v]').forEach(x=>x.classList.toggle('on',x.dataset.v==='todo'));render();
+  if(!jid)return;
+  setTimeout(()=>{
+    const el=[...$$('#todoWrap .tdCard')].find(c=>[...c.querySelectorAll('.tdId')].some(t=>t.dataset.id===jid));
+    if(!el)return;
+    el.scrollIntoView({behavior:'smooth',block:'center'});
+    el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),1800);
+  },450);
+}
 function renderTodo(){
   if(!RAWIDX&&!DEMO&&!window.__rawBusy){          // งานที่ยังไม่เปิด ต้องอ่านชื่อจากชีทเพื่อจับกลุ่ม
     window.__rawBusy=1;
@@ -1434,8 +1482,8 @@ function renderTodo(){
   $('#nTodo').textContent=G.reduce((a,g)=>a+g.items.length,0);
   $('#nTodo').className='badge'+(G.length?'':' zero');
   const idChip=id=>{const u=niftyUrl(id);
-    return u?`<a class="tdId" href="${u}" target="_blank" rel="noopener" title="เปิดงานนี้ใน Nifty">${esc(id)} ↗</a>`
-            :`<span class="tdId">${esc(id)}</span>`};
+    return `<span class="tdId" data-id="${esc(id)}" title="กดเพื่อเลือกไซส์นี้">${esc(id)}${
+      u?`<a class="tdGo" href="${u}" target="_blank" rel="noopener" title="เปิดใน Nifty">↗</a>`:''}</span>`};
   const card=g=>{
     const ids=g.items.map(x=>x.id);
     const fee=ids.every(isFeeJob);
@@ -1463,12 +1511,9 @@ function renderTodo(){
       <div class="tdBtns">
         ${fee?`<button class="btn2 tdSkip" data-ids="${esc(ids.join(','))}">✓ ไม่ต้องลงแผน (ค่าจัดส่ง)</button>`
              :`<button class="btnG tdPlan" data-ids="${esc(ids.join(','))}">＋ ลงแผนทั้งชุด${ids.length>1?' ('+ids.length+' ไซส์)':''}</button>`}
-        ${(!fee&&ids.length>1)?`<span class="tdNote">ลงครั้งเดียวได้ทั้ง ${ids.length} ไซส์ — ค้นหาด้วยเลขไหนก็เจอ</span>`:''}
+        ${(!fee&&ids.length>1)?`<button class="btnG tdPickGo" style="display:none"></button>
+          <span class="tdNote">หรือกดเลือกเฉพาะบางเลขงานด้านบน แล้วลงแผนเฉพาะที่เลือก</span>`:''}
       </div>
-      ${(!fee&&ids.length>1)?`<div class="tdOnes">
-        <span class="tdNote" style="width:100%">หรือเลือกเฉพาะไซส์ที่จะลงแผนรอบนี้:</span>
-        ${ids.map(x=>`<label class="tdPick"><input type="checkbox" class="tdChk" data-id="${esc(x)}">${esc(x)}</label>`).join('')}
-        <button class="btnG tdPickGo" disabled>＋ ลงแผนเฉพาะที่เลือก</button></div>`:''}
       </div>`};
   let lastSo=null;
   const block=g=>{let h='';
@@ -1484,12 +1529,14 @@ function renderTodo(){
     window.__planGroup=ids.slice(1);
     wizStep1(ids[0]);
   });
-  $$('#todoWrap .tdOnes').forEach(box=>{
-    const btn=box.querySelector('.tdPickGo');
-    const sel=()=>[...box.querySelectorAll('.tdChk:checked')].map(c=>c.dataset.id);
-    const sync=()=>{const n=sel().length;btn.disabled=!n;
-      btn.textContent=n?`＋ ลงแผนเฉพาะที่เลือก (${n} ไซส์)`:'＋ ลงแผนเฉพาะที่เลือก'};
-    box.querySelectorAll('.tdChk').forEach(c=>c.onchange=sync);
+  $$('#todoWrap .tdCard').forEach(cd=>{
+    const btn=cd.querySelector('.tdPickGo');if(!btn)return;
+    const sel=()=>[...cd.querySelectorAll('.tdId.on')].map(c=>c.dataset.id);
+    const sync=()=>{const n=sel().length;btn.style.display=n?'':'none';
+      btn.textContent=`＋ ลงแผนเฉพาะที่เลือก (${n} ไซส์)`};
+    cd.querySelectorAll('.tdId').forEach(c=>c.onclick=e=>{
+      if(e.target.classList.contains('tdGo'))return;      // กดลูกศร = ไป Nifty ไม่ใช่เลือก
+      c.classList.toggle('on');sync()});
     btn.onclick=()=>{const ids=sel();if(!ids.length)return;
       window.__planGroup=ids.slice(1);wizStep1(ids[0])};
     sync();});
