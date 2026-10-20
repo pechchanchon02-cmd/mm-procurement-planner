@@ -64,7 +64,7 @@ button.btn:hover,button.btn2:hover{border-color:var(--accent);color:var(--accent
 main{max-width:1200px;margin:0 auto;padding:12px 16px 120px}
 #topRow{display:flex;gap:12px;align-items:stretch;margin-bottom:14px}
 #kpis{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;align-content:start}
-#ibWrap{width:330px;flex:none;position:relative;min-height:235px}
+#ibWrap{width:330px;flex:none;order:-1;position:relative;min-height:235px}
 #ibWrap .ibBox{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden}
 @media (max-width:900px){#topRow{flex-direction:column}
   #ibWrap{width:100%;position:static;min-height:0}
@@ -76,7 +76,7 @@ main{max-width:1200px;margin:0 auto;padding:12px 16px 120px}
 .kpi .k{font-size:12px;color:var(--ink-3);font-weight:500}
 .kpi .v{font-family:var(--font-display);font-size:26px;font-weight:700;line-height:1.1;margin-top:2px}
 .kpi.crit .v{color:var(--crit-ink)}.kpi.warn .v{color:var(--warn-ink)}.kpi.good .v{color:var(--good-ink)}.kpi.in .v{color:var(--accent-ink)}
-#running{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px}
+#running{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 .jcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);cursor:pointer;overflow:hidden;transition:transform .12s, box-shadow .12s}
 .jcard:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(23,23,15,.08),0 14px 30px -12px rgba(23,23,15,.28)}
 .jhead{display:flex;gap:12px;padding:11px 13px;background:linear-gradient(90deg,var(--band),transparent 65%)}
@@ -113,7 +113,15 @@ main{max-width:1200px;margin:0 auto;padding:12px 16px 120px}
 .tdOnes{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;padding-top:9px;border-top:1px dashed var(--line-2)}
 .tdOnes .btn2{font-size:12px;padding:4px 10px}
 .tdRow{display:flex;gap:14px;align-items:flex-start}
-.tdPic{width:92px;height:92px;flex:none;background:var(--surface-2);border-radius:10px;display:flex;align-items:center;justify-content:center;padding:5px}
+.tdPic{width:92px;height:92px;flex:none;position:relative;background:var(--surface-2);border-radius:10px;display:flex;align-items:center;justify-content:center;padding:5px}
+.tdQm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:10px;
+  font-family:var(--font-display);font-size:40px;font-weight:700;color:var(--warn-ink);background:rgba(120,110,80,.13)}
+.tdIds{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+.tdId{font-size:11.5px;color:var(--ink-3);background:var(--surface-2);border:1px solid var(--line-2);border-radius:6px;padding:1px 7px;text-decoration:none;display:inline-block}
+a.tdId:hover{border-color:var(--accent);color:var(--accent-ink)}
+.tdPick{display:inline-flex;align-items:center;gap:5px;font-size:12px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:8px;padding:3px 9px;cursor:pointer}
+.tdPick input{accent-color:var(--accent);width:15px;height:15px;margin:0}
+.tdOnes .btnG{font-size:12.5px;padding:5px 12px}
 .tdMid{flex:1;min-width:0}
 .tdFacts{display:flex;flex-wrap:wrap;gap:6px;margin:5px 0 4px}
 .tdFact{display:inline-flex;align-items:center;gap:5px;background:var(--surface-2);border-radius:999px;padding:2px 10px;font-size:12px;color:var(--ink-2)}
@@ -469,6 +477,7 @@ body.supview .ssRow img{border-color:#ddd9cf}
   <div class="fld"><label>Supabase URL</label><input id="cUrl" placeholder="https://xxxx.supabase.co"></div>
   <div class="fld"><label>Supabase anon key</label><input id="cKey" placeholder="eyJ..."></div>
   <div class="fld"><label>Sheet ID (ชีท raw)</label><input id="cSheet"></div>
+  <div class="fld"><label>ลิงก์ Nifty (วางลิงก์งานตัวอย่าง 1 อัน ระบบทำเป็นแม่แบบให้เอง)</label><input id="cNifty" placeholder="https://pm.niftypm.com/.../{id}"></div>
   <div class="row2">
     <div class="fld"><label>gid: RAW [MD&amp;SAN]</label><input id="cGid1"></div>
     <div class="fld"><label>gid: RAW [GSC]</label><input id="cGid2"></div>
@@ -653,13 +662,18 @@ function parseColor(nm){const x=nm||'';
   for(const [k,c] of [['ดำ','#232323'],['ขาว','#f4f4ef'],['ครีม','#efe6d0'],['กรม','#20304e'],['เทา','#6f6f6a'],['น้ำตาล','#7a5236'],['เขียว','#2f7a4c'],['ฟ้า','#7fb3d9'],['แดง','#b8322f'],['ชมพู','#e8a7bb'],['ม่วง','#6d5390'],['เหลือง','#e8c93e'],['ส้ม','#e0762e'],['เบจ','#d9c6a5']])
     if(x.includes('สี'+k))return {n:k,c};
   return null}
+function niftyUrl(id){           // ต้องตั้งลิงก์ Nifty ในหน้าตั้งค่าก่อน (บอร์ด GSC เท่านั้นที่มี Task ID ในชีท)
+  const t=((RAWIDX&&RAWIDX[id])||{}).task_id||'';
+  if(!t||!cfg.nifty||!cfg.nifty.includes('{id}'))return '';
+  return cfg.nifty.replace('{id}',encodeURIComponent(t));
+}
 function todoInfo(ids){
   let qty=0,nm='';
   ids.forEach(i=>{qty+=parseQty(i); if(!nm&&!isFeeJob(i))nm=jobName(i)});
   const col=parseColor(nm)||{n:'ไม่ระบุสี',c:'#f4f4ef'};
   const pat=parseShape(nm);
   const PN={basic:'ทรงปกติ',oversize:'โอเวอร์ไซส์',boxy:'บ็อกซี่',babytee:'เบบี้ที'};
-  return {qty,pat,patName:PN[pat]||pat,col};
+  return {qty,pat,patName:PN[pat]||pat,col,unknown:!parseColor(nm)};
 }
 function memberIds(id){const m=(PROC[id]||{}).member_ids||'';return m?m.split(',').filter(Boolean):[]}
 function buildGroups(ids){const g={};ids.forEach(id=>{const k=groupKey(id);if(k)(g[k]=g[k]||[]).push(id)});return g}
@@ -723,10 +737,16 @@ function askWho(){
     cfg.who=b.dataset.w;store.set(JSON.stringify(cfg));d.remove();toast('สวัสดี '+cfg.who+' 🎉')});
 }
 function openCfg(){['Url','Key','Sheet','Gid1','Gid2'].forEach(k=>$('#c'+k).value=cfg[k.toLowerCase()]||'');
-  $('#cWho').value=cfg.who;$('#cL1').value=cfg.l1;$('#cL2').value=cfg.l2;$('#cL3').value=cfg.l3;
+  $('#cNifty').value=cfg.nifty||'';$('#cWho').value=cfg.who;$('#cL1').value=cfg.l1;$('#cL2').value=cfg.l2;$('#cL3').value=cfg.l3;
   $('#modal').classList.add('on')}
 $('#bCfg').onclick=openCfg;
-$('#cSave').onclick=()=>{cfg={...cfg,url:$('#cUrl').value.trim(),key:$('#cKey').value.trim(),who:$('#cWho').value,
+function niftyTpl(v){            // วางลิงก์ดิบมาก็ได้ เดาตำแหน่งรหัสงานให้เอง
+  v=(v||'').trim();if(!v||v.includes('{id}'))return v;
+  const re=/[A-Za-z0-9_!.-]{8,24}(?=[/?#]|$)/g;let m,last=null;
+  while((m=re.exec(v)))last=m;                     // เอาชิ้นสุดท้าย = รหัสงาน ไม่ใช่รหัสโปรเจกต้นทาง
+  return last?v.slice(0,last.index)+'{id}'+v.slice(last.index+last[0].length):v;
+}
+$('#cSave').onclick=()=>{cfg={...cfg,nifty:niftyTpl($('#cNifty').value),url:$('#cUrl').value.trim(),key:$('#cKey').value.trim(),who:$('#cWho').value,
   sheet:$('#cSheet').value.trim(),gid1:$('#cGid1').value.trim(),gid2:$('#cGid2').value.trim(),
   l1:+$('#cL1').value||7,l2:+$('#cL2').value||5,l3:+$('#cL3').value||4};
   store.set(JSON.stringify(cfg));$('#modal').classList.remove('on');boot()};
@@ -825,7 +845,7 @@ async function buildRawIndex(){
   gsc.slice(1).forEach(r=>{const id=(r[1]||'').trim();if(!id)return;
     const done=(r[iD]||'').toUpperCase()==='TRUE';
     const tags=[r[iP]||'',r[iL]||'',r[iY]||''].filter(Boolean).join(', ')+(((r[iP]||'').includes('สต็อก'))?', เบิกสต็อก':'');
-    idx[id]={job_id:id,board:'GSC',name:r[iC_]||r[2]||'',nifty_status:done?'เสร็จสิ้น [GSC]':'กำลังทำ [GSC]',
+    idx[id]={job_id:id,board:'GSC',task_id:(r[0]||'').trim(),name:r[iC_]||r[2]||'',nifty_status:done?'เสร็จสิ้น [GSC]':'กำลังทำ [GSC]',
       so_no:r[iM]||'',opened_at:iso(parseDate(r[iF],false)),
       due_date:iso(parseDate(r[iG],false)||parseDate(r[iQ],true)),sale_name:'',
       image_url:r[iAH]||'',customer:r[iU]||'',tags}});
@@ -1397,6 +1417,9 @@ function renderTodo(){
   const G=todoGroups();
   $('#nTodo').textContent=G.reduce((a,g)=>a+g.items.length,0);
   $('#nTodo').className='badge'+(G.length?'':' zero');
+  const idChip=id=>{const u=niftyUrl(id);
+    return u?`<a class="tdId" href="${u}" target="_blank" rel="noopener" title="เปิดงานนี้ใน Nifty">${esc(id)} ↗</a>`
+            :`<span class="tdId">${esc(id)}</span>`};
   const card=g=>{
     const ids=g.items.map(x=>x.id);
     const fee=ids.every(isFeeJob);
@@ -1408,7 +1431,8 @@ function renderTodo(){
     const inf=todoInfo(ids);
     return `<div class="tdCard">
       <div class="tdRow">
-        <div class="tdPic">${fee?'<span style="font-size:26px">🚚</span>':shirtBox(inf.pat,inf.col.c)}</div>
+        <div class="tdPic">${fee?'<span style="font-size:26px">🚚</span>':
+          shirtBox(inf.pat,inf.col.c)+(inf.unknown?'<span class="tdQm" title="ชื่องานไม่ได้บอกสี">?</span>':'')}</div>
         <div class="tdMid">
           <div class="tdTitle">${title}</div>
           <div class="tdFacts">${fee?'<span class="tdFact">ค่าจัดส่ง</span>':
@@ -1416,17 +1440,19 @@ function renderTodo(){
              <span class="tdFact">${esc(inf.patName)}</span>
              <span class="tdFact"><i style="background:${inf.col.c}"></i>${esc(inf.col.n)}</span>
              <span class="tdFact">${ids.length} ไซส์</span>`}</div>
-          <div class="tdSub">${esc(ids.slice(0,10).join(', '))}${ids.length>10?' …':''}</div>
+          <div class="tdIds">${ids.map(idChip).join('')}</div>
         </div>
         <div class="tdRight">${dd}</div></div>
       ${g.txt?`<div class="tdTxt">${esc(g.txt)}</div>`:''}
       <div class="tdBtns">
         ${fee?`<button class="btn2 tdSkip" data-ids="${esc(ids.join(','))}">✓ ไม่ต้องลงแผน (ค่าจัดส่ง)</button>`
-             :`<button class="btnG tdPlan" data-ids="${esc(ids.join(','))}">＋ ลงแผน${ids.length>1?' (รวม '+ids.length+' ไซส์)':''}</button>`}
-        ${(!fee&&ids.length>1)?`<button class="btn2 tdOne" data-ids="${esc(ids.join(','))}">แยกลงทีละงาน</button>
-          <span class="tdNote">ลงครั้งเดียวได้ทั้ง ${ids.length} ไซส์ — ค้นหาด้วยเลขไหนก็เจอ</span>`:''}
+             :`<button class="btnG tdPlan" data-ids="${esc(ids.join(','))}">＋ ลงแผนทั้งชุด${ids.length>1?' ('+ids.length+' ไซส์)':''}</button>`}
+        ${(!fee&&ids.length>1)?`<span class="tdNote">ลงครั้งเดียวได้ทั้ง ${ids.length} ไซส์ — ค้นหาด้วยเลขไหนก็เจอ</span>`:''}
       </div>
-      <div class="tdOnes" style="display:none">${ids.map(x=>`<button class="btn2 tdSolo" data-id="${esc(x)}">＋ ${esc(x)}</button>`).join('')}</div>
+      ${(!fee&&ids.length>1)?`<div class="tdOnes">
+        <span class="tdNote" style="width:100%">หรือเลือกเฉพาะไซส์ที่จะลงแผนรอบนี้:</span>
+        ${ids.map(x=>`<label class="tdPick"><input type="checkbox" class="tdChk" data-id="${esc(x)}">${esc(x)}</label>`).join('')}
+        <button class="btnG tdPickGo" disabled>＋ ลงแผนเฉพาะที่เลือก</button></div>`:''}
       </div>`};
   $('#todoWrap').innerHTML=G.length?
     `<div class="tdHint">งานที่ยังไม่มีแผน — กดปุ่มเดียวลงแผนได้ทั้งชุด แล้วไปทำงานต่อได้เลย</div>`+G.map(card).join('')
@@ -1436,10 +1462,15 @@ function renderTodo(){
     window.__planGroup=ids.slice(1);
     wizStep1(ids[0]);
   });
-  $$('#todoWrap .tdOne').forEach(b=>b.onclick=()=>{
-    const box=b.closest('.tdCard').querySelector('.tdOnes');
-    box.style.display=box.style.display==='none'?'flex':'none'});
-  $$('#todoWrap .tdSolo').forEach(b=>b.onclick=()=>{window.__planGroup=null;wizStep1(b.dataset.id)});
+  $$('#todoWrap .tdOnes').forEach(box=>{
+    const btn=box.querySelector('.tdPickGo');
+    const sel=()=>[...box.querySelectorAll('.tdChk:checked')].map(c=>c.dataset.id);
+    const sync=()=>{const n=sel().length;btn.disabled=!n;
+      btn.textContent=n?`＋ ลงแผนเฉพาะที่เลือก (${n} ไซส์)`:'＋ ลงแผนเฉพาะที่เลือก'};
+    box.querySelectorAll('.tdChk').forEach(c=>c.onchange=sync);
+    btn.onclick=()=>{const ids=sel();if(!ids.length)return;
+      window.__planGroup=ids.slice(1);wizStep1(ids[0])};
+    sync();});
   $$('#todoWrap .tdSkip').forEach(b=>b.onclick=async()=>{
     for(const id of b.dataset.ids.split(',')){
       const ib=INBOX.find(x=>x.job_id===id);
