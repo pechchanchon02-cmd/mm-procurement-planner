@@ -62,12 +62,14 @@ button.btn:hover,button.btn2:hover{border-color:var(--accent);color:var(--accent
 #bar label{font-size:13px;color:var(--ink-2);display:inline-flex;gap:6px;align-items:center}
 #bar input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
 main{max-width:1200px;margin:0 auto;padding:12px 16px 120px}
-#topRow{display:flex;gap:12px;align-items:stretch;margin-bottom:14px}
-#kpis{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;align-content:start}
-#ibWrap{width:330px;flex:none;order:-1;position:relative;min-height:235px}
+#topRow{margin-bottom:12px}
+#boardRow{display:grid;grid-template-columns:330px minmax(0,1fr);gap:14px;align-items:start}
+#kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;align-content:start}
+#ibWrap{position:sticky;top:12px;height:calc(100vh - 160px);min-height:320px}
 #ibWrap .ibBox{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden}
-@media (max-width:900px){#topRow{flex-direction:column}
-  #ibWrap{width:100%;position:static;min-height:0}
+@media (max-width:900px){#boardRow{grid-template-columns:1fr}
+  #kpis{grid-template-columns:repeat(2,1fr)}
+  #ibWrap{position:static;height:auto;min-height:0}
   #ibWrap .ibBox{position:static;max-height:340px}}
 .kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px}
 .kpi.clickable{cursor:pointer}
@@ -110,6 +112,8 @@ main{max-width:1200px;margin:0 auto;padding:12px 16px 120px}
 .tdBtns .btnG{font-size:13.5px;padding:8px 16px}
 .tdNote{font-size:11.5px;color:var(--ink-3)}
 .tdSo{font-size:11.5px;color:var(--ink-3);font-weight:500}
+.tdSoHd{font-family:var(--font-display);font-size:12.5px;font-weight:700;color:var(--accent-ink);
+  background:var(--accent-soft);border-radius:8px;padding:5px 12px;margin:14px 0 8px;max-width:900px}
 .tdOnes{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;padding-top:9px;border-top:1px dashed var(--line-2)}
 .tdOnes .btn2{font-size:12px;padding:4px 10px}
 .tdRow{display:flex;gap:14px;align-items:flex-start}
@@ -442,9 +446,11 @@ body.supview .ssRow img{border-color:#ddd9cf}
 <main>
   <div id="topRow">
     <div id="kpis"></div>
-    <div id="ibWrap"></div>
   </div>
-  <div id="running"></div>
+  <div id="boardRow">
+    <div id="ibWrap"></div>
+    <div id="running"></div>
+  </div>
   <div id="calWrap">
     <div class="calhd"><button class="btn2" id="calPrev">‹</button><h2 id="calTitle"></h2><button class="btn2" id="calNext">›</button>
       <span style="font-size:11.5px;color:var(--mut)">■ <span style="color:var(--fab)">ผ้า</span> · <span style="color:var(--sew)">ตัดเย็บ</span> · <span style="color:var(--scr)">สกรีน/ปัก</span> · <span style="color:var(--shp)">ส่งลูกค้า</span></span></div>
@@ -505,6 +511,7 @@ body.supview .ssRow img{border-color:#ddd9cf}
 const LS='pplanner.cfg';
 const store={get(){try{return localStorage.getItem(LS)}catch(e){return null}},set(v){try{localStorage.setItem(LS,v)}catch(e){}}};
 let cfg=Object.assign({sheet:'1eUSTzd-VUwyxQnEz1zCdHx2YkqJTClwC2pY9zLD7aoY',gid1:'417960815',gid2:'575739873',
+  nifty:'https://giftwise.nifty.pm/hZ_KbdUDXN/task/{id}',
   url:'https://nbjkuihtdnbetsphhlpr.supabase.co',
   key:'sb_publishable_niZfHPKsst10rkWKwsSPrg_rLtFQJe7',
   who:'',l1:7,l2:5,l3:4},JSON.parse(store.get()||'{}'));
@@ -662,10 +669,9 @@ function parseColor(nm){const x=nm||'';
   for(const [k,c] of [['ดำ','#232323'],['ขาว','#f4f4ef'],['ครีม','#efe6d0'],['กรม','#20304e'],['เทา','#6f6f6a'],['น้ำตาล','#7a5236'],['เขียว','#2f7a4c'],['ฟ้า','#7fb3d9'],['แดง','#b8322f'],['ชมพู','#e8a7bb'],['ม่วง','#6d5390'],['เหลือง','#e8c93e'],['ส้ม','#e0762e'],['เบจ','#d9c6a5']])
     if(x.includes('สี'+k))return {n:k,c};
   return null}
-function niftyUrl(id){           // ต้องตั้งลิงก์ Nifty ในหน้าตั้งค่าก่อน (บอร์ด GSC เท่านั้นที่มี Task ID ในชีท)
-  const t=((RAWIDX&&RAWIDX[id])||{}).task_id||'';
-  if(!t||!cfg.nifty||!cfg.nifty.includes('{id}'))return '';
-  return cfg.nifty.replace('{id}',encodeURIComponent(t));
+function niftyUrl(id){           // ลิงก์งานจริงของทีมใช้เลขงานตรงๆ เช่น .../task/GSC-1204
+  if(!id||!cfg.nifty||!cfg.nifty.includes('{id}'))return '';
+  return cfg.nifty.replace('{id}',encodeURIComponent(id));
 }
 function todoInfo(ids){
   let qty=0,nm='';
@@ -742,7 +748,7 @@ function openCfg(){['Url','Key','Sheet','Gid1','Gid2'].forEach(k=>$('#c'+k).valu
 $('#bCfg').onclick=openCfg;
 function niftyTpl(v){            // วางลิงก์ดิบมาก็ได้ เดาตำแหน่งรหัสงานให้เอง
   v=(v||'').trim();if(!v||v.includes('{id}'))return v;
-  const re=/[A-Za-z0-9_!.-]{8,24}(?=[/?#]|$)/g;let m,last=null;
+  const re=/[A-Za-z0-9_!.-]{3,24}(?=[/?#]|$)/g;let m,last=null;
   while((m=re.exec(v)))last=m;                     // เอาชิ้นสุดท้าย = รหัสงาน ไม่ใช่รหัสโปรเจกต้นทาง
   return last?v.slice(0,last.index)+'{id}'+v.slice(last.index+last[0].length):v;
 }
@@ -1408,7 +1414,14 @@ function todoGroups(){
     if(j.due_date&&(!g[k].due||j.due_date<g[k].due))g[k].due=j.due_date;
     if(!g[k].txt&&it.txt)g[k].txt=it.txt;
   });
-  return Object.values(g).sort((a,b)=>(a.due||'9999')<(b.due||'9999')?-1:1);
+  const L2=Object.values(g);
+  L2.forEach(x=>{x.so=(x.key||'').split(' ‖ ')[0];if(x.so==='-')x.so=''});
+  const soDue={},soN={};        // SO เดียวกัน = ของเซลคนเดียวกัน ต้องอยู่ติดกัน เรียงตามงานที่ส่งเร็วสุดของ SO นั้น
+  L2.forEach(x=>{const k=x.so||('~'+x.key);soN[k]=(soN[k]||0)+1;
+    if(x.due&&(!soDue[k]||x.due<soDue[k]))soDue[k]=x.due});
+  L2.forEach(x=>{const k=x.so||('~'+x.key);x.soCount=soN[k];x.soDue=soDue[k]||'9999'});
+  return L2.sort((a,b)=>(a.soDue+'|'+(a.so||a.key)+'|'+(a.due||'9999')+'|'+a.key)
+                      < (b.soDue+'|'+(b.so||b.key)+'|'+(b.due||'9999')+'|'+b.key)?-1:1);
 }
 function renderTodo(){
   if(!RAWIDX&&!DEMO&&!window.__rawBusy){          // งานที่ยังไม่เปิด ต้องอ่านชื่อจากชีทเพื่อจับกลุ่ม
@@ -1457,8 +1470,14 @@ function renderTodo(){
         ${ids.map(x=>`<label class="tdPick"><input type="checkbox" class="tdChk" data-id="${esc(x)}">${esc(x)}</label>`).join('')}
         <button class="btnG tdPickGo" disabled>＋ ลงแผนเฉพาะที่เลือก</button></div>`:''}
       </div>`};
+  let lastSo=null;
+  const block=g=>{let h='';
+    if(g.so&&g.soCount>1&&g.so!==lastSo)
+      h=`<div class="tdSoHd">${esc(g.so)} · ${g.soCount} รายการ (ออเดอร์เดียวกัน)</div>`;
+    lastSo=g.so||null;
+    return h+card(g)};
   $('#todoWrap').innerHTML=G.length?
-    `<div class="tdHint">งานที่ยังไม่มีแผน — กดปุ่มเดียวลงแผนได้ทั้งชุด แล้วไปทำงานต่อได้เลย</div>`+G.map(card).join('')
+    `<div class="tdHint">งานที่ยังไม่มีแผน — ออเดอร์เดียวกันอยู่ติดกัน · กดปุ่มเดียวลงแผนได้ทั้งชุด</div>`+G.map(block).join('')
     :'<div style="color:var(--mut);padding:40px;text-align:center">ลงแผนครบทุกงานแล้ว 🎉</div>';
   $$('#todoWrap .tdPlan').forEach(b=>b.onclick=()=>{
     const ids=b.dataset.ids.split(',');
