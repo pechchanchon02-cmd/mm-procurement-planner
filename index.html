@@ -794,7 +794,7 @@ async function refreshRaw(){
       if(r.image_url&&!j.image_url)patch.image_url=r.image_url;
       if(r.due_date&&!j.due_date)patch.due_date=r.due_date;   // due ที่ตั้งเองไว้ ไม่ถูกทับ
       if(Object.keys(patch).length){const nj={...j,...patch,job_id:p.job_id};ups.push(nj);JOBS[p.job_id]=nj}});
-    if(ups.length){await sb.from('jobs').upsert(ups);render();toast('อัพเดทข้อมูลจาก raw แล้ว '+ups.length+' งาน')}
+    if(ups.length){await sb.from('jobs').upsert(ups.map(jobRow));render();toast('อัพเดทข้อมูลจาก raw แล้ว '+ups.length+' งาน')}
     if(INBOX&&INBOX.length)renderInbox();          // ตอนนี้จับกลุ่มได้แล้ว ตัวเลขในกล่องงานเข้าถึงจะถูก
     updTodoBadge();if(view==='todo')renderTodo();
   }catch(e){console.warn('refreshRaw:',e.message)}
@@ -829,6 +829,8 @@ function gvizRows(gid){
     document.head.appendChild(sc);
   });
 }
+const JOBCOLS=['job_id','board','name','nifty_status','tags','so_no','opened_at','due_date','sale_name','customer','image_url'];
+function jobRow(j){const o={};JOBCOLS.forEach(k=>{if(j[k]!==undefined&&j[k]!=='')o[k]=j[k]});o.job_id=j.job_id;return o}
 async function buildRawIndex(){
   if(RAWIDX)return RAWIDX;
   toast('กำลังอ่านชีท raw...');
@@ -1082,7 +1084,8 @@ function wizStep3(j,flags){
       MS[j.job_id]=rows.map((r,i)=>({...r,id:'d'+i}));$('#wiz').classList.remove('on');render();return}
     try{
       const jj=JOBS[j.job_id]||j;delete jj._noraw;jj.due_date=flags.due||jj.due_date;
-      await sb.from('jobs').upsert(jj);
+      const {error:ej}=await sb.from('jobs').upsert(jobRow(jj));
+      if(ej)throw ej;                       // ถ้างานยังไม่ถูกสร้าง ขั้นตอนจะติด foreign key ทีหลัง ต้องรู้ตรงนี้เลย
       await sb.from('procurement').upsert({job_id:j.job_id,need_fabric:flags.need_fabric,
         need_sewing:flags.need_sewing,screen_where:flags.screen_where,pic:flags.pic,tracked:true});
       await sb.from('milestones').delete().eq('job_id',j.job_id);
