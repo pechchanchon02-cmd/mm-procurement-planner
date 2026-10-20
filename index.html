@@ -900,7 +900,7 @@ function renderInbox(){
       <input id="ibeTxt" placeholder="ดีเทล/หัวข้อ" value="${esc(r.text||'')}" style="width:100%;margin-bottom:8px">
       <div class="btns"><button class="btnG ibeSave" data-i="${r.id}">💾 บันทึก</button>
         <button class="btn2 ibeCancel">ยกเลิก</button></div></div>`;
-  const row=(r,done)=>{
+  const row=(r,done)=>{          // แถวเดี่ยว (ใช้กับโซน "จบแล้ว")
     if(IBEDIT===r.id)return editBlk(r);
     const a=ageTxt(r.created_at);
     return `<div class="ibRow ${done?'done':''}">
@@ -911,6 +911,28 @@ function renderInbox(){
          ${r.job_id?`<button class="btnP ibOpen" data-i="${r.id}" title="เปิดงาน ${esc(r.job_id)}">▶</button>`
                    :`<button class="btnP ibEdit" data-i="${r.id}" data-job="1" title="ใส่เลขงาน">🔗</button>`}
          <button class="btn2 ibClr" data-i="${r.id}" title="เคลียร์">✓</button>`}</span>
+      </div>`};
+  const ibGroups=()=>{           // รวมงานเข้าเป็น "รายการ" แบบเดียวกับหน้ารอลงแผน
+    const g={},ord=[];
+    INBOX.forEach(r=>{
+      const k=r.job_id?(grouped?designKey(r.job_id):r.job_id):('t:'+r.id);
+      if(!g[k]){g[k]={key:k,rows:[]};ord.push(g[k])}
+      g[k].rows.push(r)});
+    return ord};
+  const grow=g=>{
+    const rows=g.rows,ids=rows.map(r=>r.job_id).filter(Boolean),multi=rows.length>1;
+    if(!multi)return row(rows[0],false);
+    if(IBEDIT&&rows.some(r=>r.id===IBEDIT))return rows.map(r=>row(r,false)).join('');
+    const a=ageTxt(rows.map(r=>r.created_at).sort()[0]);
+    const inf=ids.length?todoInfo(ids):null;
+    const ttl=(grouped?designNorm(jobName(ids[0])):'')||ids[0]||'(ว่าง)';
+    const rid=rows.map(r=>r.id).join(',');
+    return `<div class="ibRow">
+      <div class="ibMain" data-x="${rows[0].id}" title="กดเพื่อไปที่การ์ดงานในหน้ารอลงแผน"><b>${esc(ttl)}</b>
+        <small>${ids.length} ไซส์${inf&&inf.qty?` · <b>${inf.qty.toLocaleString()} ตัว</b>`:''} · <span class="pill ${a.c}">${a.t}</span></small></div>
+      <span class="ibAct">
+        <button class="btnP ibOpenG" data-jobs="${esc(ids.join(','))}" title="ลงแผนทั้งชุด ${ids.length} ไซส์">▶</button>
+        <button class="btn2 ibClrG" data-ids="${rid}" title="เคลียร์ทั้งชุด">✓</button></span>
       </div>`};
   el.innerHTML=`<div class="supbox ibBox">
     <h2>📥 งานเข้า ${INBOX.length?`<span class="cnt" style="background:var(--warn-bg);color:var(--warn-ink)">${INBOX.length}</span>`:''}
@@ -923,7 +945,7 @@ function renderInbox(){
     ${INBOX.length?`<div class="ibGo"><div>${grouped?`งานพวกนี้รวมเป็น <b>${nGrp} รายการ</b> รอลงแผน`:`มี <b>${nJob} งาน</b> รอลงแผน`}</div>
       <button class="btnG" id="ibToTodo">ไปหน้า รอลงแผน →</button></div>`:''}
     <div class="ibList">
-      ${INBOX.map(r=>row(r,false)).join('')||'<div style="color:var(--mut);padding:8px 0;font-size:12.5px">ไม่มีงานรอรับ 🎉</div>'}
+      ${ibGroups().map(grow).join('')||'<div style="color:var(--mut);padding:8px 0;font-size:12.5px">ไม่มีงานรอรับ 🎉</div>'}
       ${INDONE.length?`<div class="supsec" style="padding-left:0">จบแล้วล่าสุด — กดเพื่อดู/ดึงกลับ</div>${INDONE.map(r=>row(r,true)).join('')}`:''}
     </div></div>`;
   $('#ibPlus').onclick=()=>{IBFORM=!IBFORM;renderInbox();if(IBFORM)$('#ibJob').focus()};
@@ -964,6 +986,12 @@ function renderInbox(){
     r.done_at=null;r.done_by=null;INDONE=INDONE.filter(x=>x!==r);
     INBOX.push(r);INBOX.sort((a,b2)=>a.created_at<b2.created_at?-1:1);
     IBEXP=null;renderInbox();toast('ดึง "'+(r.job_id||r.text||'').slice(0,25)+'" กลับมารอรับแล้ว ↩')});
+  $$('#ibWrap .ibOpenG').forEach(b=>b.onclick=e=>{e.stopPropagation();
+    const ids=b.dataset.jobs.split(',').filter(Boolean);if(!ids.length)return;
+    window.__planGroup=ids.slice(1);wizStep1(ids[0])});
+  $$('#ibWrap .ibClrG').forEach(b=>b.onclick=async e=>{e.stopPropagation();
+    for(const i of b.dataset.ids.split(','))await clear(i);
+    renderInbox();toast('เคลียร์ทั้งชุดแล้ว ✓ (ดึงกลับได้ในโซนจบแล้ว)')});
   $$('#ibWrap .ibOpen').forEach(b=>b.onclick=async e=>{e.stopPropagation();
     IBEXP=null;const r=await clear(b.dataset.i);
     renderInbox();if(r)wizStep1(r.job_id||r.text)});
