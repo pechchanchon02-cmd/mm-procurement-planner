@@ -477,6 +477,7 @@ body.supview .ssRow img{border-color:#ddd9cf}
 <div id="ovl"></div>
 <div id="drawer">
   <div class="hd"><b id="dTitle">—</b><span class="sp"></span>
+    <a class="btn" id="dNifty" target="_blank" rel="noopener" title="เปิดงานนี้ใน Nifty" style="text-decoration:none">↗ Nifty</a>
     <button class="btn" id="dWO">📄 ใบสั่งผลิต</button>
     <button class="btn" id="dCost">💰 ต้นทุน</button>
     <button class="btn" id="dRemove" title="เอาออกจากบอร์ด">🗑</button>
@@ -1607,6 +1608,7 @@ async function openDrawer(id){
   CUR=id;const j=JOBS[id]||{job_id:id},p=PROC[id]||{job_id:id};
   $('#dTitle').textContent=id;
   $('#dWO').textContent=WOS[id]?'📄 ใบสั่งผลิต ✓':'📄 ใบสั่งผลิต';
+  const nf=niftyUrl(id);$('#dNifty').href=nf||'#';$('#dNifty').style.display=nf?'':'none';
   const im=imgOf(id);
   const list=msOf(id);
   $('#dBody').innerHTML=`
