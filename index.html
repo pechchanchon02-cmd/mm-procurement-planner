@@ -63,7 +63,7 @@ button.btn:hover,button.btn2:hover{border-color:var(--accent);color:var(--accent
 #bar input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
 main{max-width:1200px;margin:0 auto;padding:12px 16px 120px}
 #topRow{margin-bottom:12px}
-#boardRow{display:grid;grid-template-columns:330px minmax(0,1fr);gap:14px;align-items:start}
+#boardRow{display:grid;grid-template-columns:330px minmax(0,1fr) 290px;gap:14px;align-items:start}
 #kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;align-content:start}
 #ibWrap{position:sticky;top:12px;height:calc(100vh - 160px);min-height:320px}
 #ibWrap .ibBox{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden}
@@ -404,6 +404,35 @@ body.supview .ssDate.lateD{background:#b3261e;color:#fff}
 body.supview .ssRow a.btnwo{background:#0f7480;color:#fff}
 body.supview .ph2{background:#eceade}
 body.supview .ssRow img{border-color:#ddd9cf}
+
+/* --- คอลัมน์ 4: พักงาน (req ไม่จบ / ไทม์ไลน์ไม่เคลียร์) --- */
+#holdWrap{position:sticky;top:12px;max-height:calc(100vh - 160px);overflow:auto;
+  background:var(--surface-2);border:1px dashed var(--line-2);border-radius:12px;padding:10px}
+#holdWrap h3{font-family:var(--font-display);font-size:14px;margin:0 0 2px;display:flex;align-items:center;gap:6px}
+#holdWrap .hsub{font-size:11.5px;color:var(--ink-3);line-height:1.35;margin-bottom:9px}
+#holdWrap.drop,#running.drop{outline:2px dashed var(--accent);outline-offset:4px;border-radius:12px}
+.hcard{position:relative;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--ink-3);
+  border-radius:9px;padding:8px 26px 8px 9px;margin-bottom:7px;cursor:grab}
+.hcard.g{border-left-color:#2e7d4f}.hcard.y{border-left-color:#d8a200}.hcard.r{border-left-color:#b3261e}
+.hcard .hid{font-weight:700;font-size:12.5px}
+.hcard .hnm{font-size:11.5px;color:var(--ink-2);line-height:1.3;margin:1px 0 3px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.hcard .hnote{font-size:11px;color:var(--brand);background:var(--surface-2);border-radius:6px;padding:2px 6px;display:inline-block;margin-top:2px}
+.hcard .hact{display:flex;gap:5px;margin-top:5px}
+.hcard .hact .btn2{padding:2px 8px;font-size:11px}
+
+/* --- ธงสถานะแผน กรอกมือจากมุมการ์ด: เขียว ตามแผน / เหลือง เสี่ยง / แดง หลุดแผน --- */
+.jcard{position:relative}
+.flg{position:absolute;top:7px;right:8px;display:flex;gap:3px;z-index:3}
+.hcard .flg{top:6px;right:6px;flex-direction:column}
+.flg i{width:13px;height:13px;border-radius:50%;display:block;cursor:pointer;opacity:.26;border:1px solid rgba(0,0,0,.2)}
+.flg i:hover{opacity:.8}
+.flg i.on{opacity:1;box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px currentColor}
+.flg i[data-f="g"]{background:#2e7d4f;color:#2e7d4f}
+.flg i[data-f="y"]{background:#d8a200;color:#d8a200}
+.flg i[data-f="r"]{background:#b3261e;color:#b3261e}
+@media (max-width:1300px){#boardRow{grid-template-columns:330px minmax(0,1fr)}
+  #holdWrap{grid-column:1 / -1;position:static;max-height:none}}
 .ssRow{display:flex;align-items:center;gap:16px;padding:14px 4px;border-top:1px solid var(--line)}
 .ssRow img{width:92px;height:92px;object-fit:cover;border-radius:10px;border:1px solid var(--line);flex:none}
 .ssRow .ph2{width:92px;height:92px;border-radius:10px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:26px;flex:none}
@@ -445,12 +474,14 @@ body.supview .ssRow img{border-color:#ddd9cf}
   </nav>
   <span class="sp"></span>
   <button class="btnG" id="bNew">＋ เปิดงาน</button>
+  <button class="btn" id="bSale" title="ลิงก์ให้เซลดูแผนงานของตัวเอง (คนละลิงก์กับบอร์ดนี้)">🔗 ลิงก์เซล</button>
   <button class="btn" id="bCfg">⚙</button>
 </header>
 <div id="bar">
   <input id="fSearch" placeholder="ค้นหา เลขงาน / ชื่องาน / ลูกค้า" style="width:220px">
   <select id="fPic"><option value="">PIC ทั้งหมด</option></select>
   <select id="fSale"><option value="">เซลทั้งหมด</option></select>
+  <select id="fFlag" title="ธงสถานะแผน"><option value="">ธงทั้งหมด</option><option value="g">🟢 ตามแผน</option><option value="y">🟡 เสี่ยง</option><option value="r">🔴 หลุดแผน</option></select>
   <label style="font-size:12.5px"><input type="checkbox" id="fDone"> โชว์งานจบ</label>
   <span class="stat" id="stat"></span>
 </div>
@@ -461,6 +492,7 @@ body.supview .ssRow img{border-color:#ddd9cf}
   <div id="boardRow">
     <div id="ibWrap"></div>
     <div id="running"></div>
+    <div id="holdWrap"></div>
   </div>
   <div id="calWrap">
     <div class="calhd"><button class="btn2" id="calPrev">‹</button><h2 id="calTitle"></h2><button class="btn2" id="calNext">›</button>
@@ -506,6 +538,8 @@ body.supview .ssRow img{border-color:#ddd9cf}
     <div class="fld"><label>สกรีนนอก ไป-กลับ</label><input type="number" id="cL2"></div>
     <div class="fld"><label>คิวสกรีนใน</label><input type="number" id="cL3"></div>
   </div>
+  <div class="fld"><label>รหัสทีม (กันคนนอก/เซล เข้าบอร์ดจัดซื้อ — ว่าง = ไม่ต้องใส่รหัส)</label>
+    <input id="cPass" placeholder="เช่น mmplan2569"></div>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
     <button class="btn2" id="cDemo">ดู DEMO ไม่ต้องมี key</button>
     <button class="btnP" id="cSave">บันทึก</button>
@@ -553,6 +587,7 @@ let STEPMASTER=STEP_DEFAULTS.map(x=>({...x}));
 let SUPPLIERS=['TSK','ช่างเสือ','ช่างขวัญ','ช่างศักดิ์','คลัง'];
 let SUPALIAS={};   // alias(normalized) -> canonical  (มาจาก suppliers.aliases + ชื่อ canonical เอง)
 let SUPCODE={};    // share_code -> canonical name (ลิงก์ลับประจำซัพ)
+let SALECODE={};   // code -> ชื่อเซล (ลิงก์ให้เซลดูแผนงานของตัวเอง แบบดูได้เท่านั้น)
 let INBOX=[];      // งานเข้า รอทีมกดเปิด
 let INDONE=[];     // งานเข้า ที่จบแล้ว (โชว์ท้ายกล่อง)
 let SUPSEL=null;   // ซัพที่เลือกดูใน view ซัพพลายเออร์ (null = หน้ารวม)
@@ -712,13 +747,83 @@ function health(id){ // green/amber/red by next milestone vs plan
   if(!n.plan_date)return 'warn';
   const dl=Math.round((D(n.plan_date)-today())/864e5);
   return dl<0?'late':dl<=1?'warn':'good';}
+/* ---- พักงาน + ธงสถานะแผนที่กรอกมือ (ชนะการคำนวณจากวันแผน) ---- */
+const isHold=id=>!!((PROC[id]||{}).hold);
+const FLAGLBL={g:'ตามแผน',y:'เสี่ยง',r:'หลุดแผน'};
+const FLAGCLS={g:'good',y:'warn',r:'late'};
+function flagOf(ids){for(const id of [].concat(ids)){const f=(PROC[id]||{}).flag;if(f)return f}return ''}
+function effFlag(ids){const f=flagOf(ids);if(f)return f;            // ไม่ได้ติดธงเอง = ใช้ที่ระบบคิดจากวันแผน
+  const a=[].concat(ids);
+  const h=a.every(jobDone)?'good':a.map(x=>jobDone(x)?'good':health(x)).sort((x,y)=>HRANK[x]-HRANK[y])[0];
+  return ({good:'g',warn:'y',late:'r'})[h]||'g'}
+function flagDots(ids){const a=[].concat(ids),cur=flagOf(a);
+  return '<span class="flg" data-ids="'+esc(a.join(','))+'">'+['g','y','r'].map(f=>
+    `<i data-f="${f}" class="${cur===f?'on':''}" title="${FLAGLBL[f]}${cur===f?' — กดซ้ำเพื่อเอาธงออก':''}"></i>`).join('')+'</span>'}
+function wireFlags(scope){$$(scope+' .flg i').forEach(el=>el.onclick=e=>{e.stopPropagation();
+  const ids=el.parentNode.dataset.ids.split(',').filter(Boolean);
+  const f=el.dataset.f;setFlag(ids,flagOf(ids)===f?null:f)})}
+async function procPatchMany(ids,patch){            // อัพเดตหลายเลขทีเดียว ไม่ให้จอกระพริบทีละงาน
+  if(!DEMO){const rows=ids.map(id=>({job_id:id,...patch,updated_at:new Date().toISOString()}));
+    const {error}=await sb.from('procurement').upsert(rows);
+    if(error){toast(error.message);return false}}
+  ids.forEach(id=>PROC[id]={...(PROC[id]||{job_id:id}),...patch,job_id:id});
+  render();return true}
+async function setFlag(ids,f){const was=flagOf(ids);
+  if(!(await procPatchMany(ids,{flag:f})))return;
+  logEvent(ids[0],'ธงสถานะแผน',FLAGLBL[was]||'ไม่ติดธง',FLAGLBL[f]||'ไม่ติดธง');
+  toast(f?'ติดธง '+FLAGLBL[f]+' แล้ว ('+ids.length+' เลข)':'เอาธงออกแล้ว')}
+async function setHold(ids,v,note){
+  const patch=v?{hold:true,hold_note:note||null}:{hold:false,hold_note:null};
+  if(!(await procPatchMany(ids,patch)))return;
+  logEvent(ids[0],v?'พักงาน':'กลับมาวิ่ง','',note||'');
+  toast(v?'ย้ายไปพักงานแล้ว '+ids.length+' เลข':'กลับมาอยู่ใน Running แล้ว')}
+function holdAsk(ids){const r=prompt('พักงาน '+ids.length+' เลข — ติดอะไรอยู่ / รออะไร (เว้นว่างได้)','');
+  if(r===null)return;setHold(ids,true,r.trim())}
+function wireDrag(){
+  $$('#running .jcard,#holdWrap .hcard').forEach(c=>{c.draggable=true;
+    c.ondragstart=e=>{e.dataTransfer.setData('text/plain',c.dataset.ids||c.dataset.id||'');
+      e.dataTransfer.effectAllowed='move';c.style.opacity=.45};
+    c.ondragend=()=>{c.style.opacity=''}});
+  const zone=(el,v)=>{if(!el)return;
+    el.ondragover=e=>{e.preventDefault();el.classList.add('drop')};
+    el.ondragleave=()=>el.classList.remove('drop');
+    el.ondrop=e=>{e.preventDefault();el.classList.remove('drop');
+      const ids=(e.dataTransfer.getData('text/plain')||'').split(',').filter(Boolean);
+      if(!ids.length)return;
+      if(v&&!isHold(ids[0]))holdAsk(ids);
+      else if(!v&&isHold(ids[0]))setHold(ids,false)}};
+  zone($('#holdWrap'),true);zone($('#running'),false)}
+function renderHold(ids){
+  const w=$('#holdWrap');if(!w)return;
+  const cards=runGroups(ids).map(grp=>{const id=grp.lead,all=grp.ids,multi=all.length>1;
+    const j=JOBS[id]||{},p=PROC[id]||{};
+    const head=multi?(designNorm(j.name||'')||id):id;
+    return `<div class="hcard ${flagOf(all)}" data-id="${esc(id)}" data-ids="${esc(all.join(','))}">
+      ${flagDots(all)}
+      <div class="hid">${esc(head)}</div>
+      <div class="hnm">${multi?esc(all.join(' · ')):esc((j.name||'').slice(0,90))}</div>
+      <div style="font-size:11px;color:var(--ink-3)">due ${j.due_date?thDate(j.due_date):'—'}${j.sale_name?' · เซล '+esc(j.sale_name):''}</div>
+      ${p.hold_note?`<div class="hnote">📝 ${esc(p.hold_note)}</div>`:''}
+      <div class="hact"><button class="btn2 hBack" data-ids="${esc(all.join(','))}">▶ กลับมาวิ่ง</button>
+        <button class="btn2 hWhy" data-ids="${esc(all.join(','))}">📝 เหตุผล</button></div></div>`}).join('');
+  w.innerHTML=`<h3>⏸ พักงาน <span class="badge${ids.length?'':' zero'}">${ids.length}</span></h3>
+    <div class="hsub">งานที่ req ไม่จบ / ไทม์ไลน์ยังไม่เคลียร์ — ลากการ์ดจาก Running มาวางที่นี่ ไม่ให้ปนกับงานที่วิ่งจริง<br>เคลียร์แล้วลากกลับ หรือกด ▶ กลับมาวิ่ง</div>`
+    +(cards||'<div style="font-size:12px;color:var(--ink-3);padding:8px 2px">ยังไม่มีงานพัก 🎉</div>');
+  $$('#holdWrap .hBack').forEach(b=>b.onclick=e=>{e.stopPropagation();setHold(b.dataset.ids.split(','),false)});
+  $$('#holdWrap .hWhy').forEach(b=>b.onclick=e=>{e.stopPropagation();
+    const ids2=b.dataset.ids.split(',');
+    const r=prompt('เหตุผลที่พักงานนี้',(PROC[ids2[0]]||{}).hold_note||'');
+    if(r!==null)setHold(ids2,true,r.trim())});
+  $$('#holdWrap .hcard').forEach(c=>c.onclick=()=>openDrawer(c.dataset.id));
+  wireFlags('#holdWrap');
+  wireDrag()}
 
 /* ============ boot / cfg ============ */
 async function boot(){ if(cfg.url&&cfg.key){sb=window.supabase.createClient(cfg.url,cfg.key);
     if(await gateOK()){loadAll();if(!cfg.who)askWho()}} else openCfg() }
 async function gateOK(){ // รหัสทีมหน้าบอร์ด — ลิงก์ช่าง (?s/?wo/?sup) ไม่ต้องใส่
   const qp=new URLSearchParams(location.search);
-  if(qp.get('s')||qp.get('wo')||qp.get('sup'))return true;
+  if(qp.get('s')||qp.get('wo')||qp.get('sup')||qp.get('sale'))return true;
   let pass=null;
   try{const {data}=await sb.from('app_settings').select('value').eq('key','team_pass').single();
     pass=data&&data.value}catch(e){}
@@ -754,7 +859,10 @@ function askWho(){
   d.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>{
     cfg.who=b.dataset.w;store.set(JSON.stringify(cfg));d.remove();toast('สวัสดี '+cfg.who+' 🎉')});
 }
+async function loadTeamPass(){try{const {data}=await sb.from('app_settings').select('value').eq('key','team_pass').single();
+    return (data&&data.value)||''}catch(e){return ''}}
 function openCfg(){['Url','Key','Sheet','Gid1','Gid2'].forEach(k=>$('#c'+k).value=cfg[k.toLowerCase()]||'');
+  if(sb)loadTeamPass().then(v=>{$('#cPass').value=v});
   $('#cNifty').value=cfg.nifty||'';$('#cWho').value=cfg.who;$('#cL1').value=cfg.l1;$('#cL2').value=cfg.l2;$('#cL3').value=cfg.l3;
   $('#modal').classList.add('on')}
 $('#bCfg').onclick=openCfg;
@@ -767,14 +875,21 @@ function niftyTpl(v){            // วางลิงก์ดิบมาก�
 $('#cSave').onclick=()=>{cfg={...cfg,nifty:niftyTpl($('#cNifty').value),url:$('#cUrl').value.trim(),key:$('#cKey').value.trim(),who:$('#cWho').value,
   sheet:$('#cSheet').value.trim(),gid1:$('#cGid1').value.trim(),gid2:$('#cGid2').value.trim(),
   l1:+$('#cL1').value||7,l2:+$('#cL2').value||5,l3:+$('#cL3').value||4};
-  store.set(JSON.stringify(cfg));$('#modal').classList.remove('on');boot()};
+  store.set(JSON.stringify(cfg));
+  const pw=$('#cPass').value.trim();
+  if(sb)sb.from('app_settings').upsert({key:'team_pass',value:pw}).then(({error})=>{
+    if(error)toast('ตั้งรหัสทีมไม่ได้: '+error.message);
+    else{cfg.gate=pw;store.set(JSON.stringify(cfg));toast(pw?'ตั้งรหัสทีมแล้ว — คนอื่นต้องใส่รหัสนี้ครั้งแรก':'ยกเลิกรหัสทีมแล้ว')}});
+  $('#modal').classList.remove('on');boot()};
 $('#cDemo').onclick=()=>{$('#modal').classList.remove('on');demoData();render();$('#demoBadge').style.display='inline'};
 
 async function loadAll(){
-  const [{data:js},{data:ps},{data:ms},{data:sup},{data:sm},{data:pat},{data:wos}]=await Promise.all([
+  const [{data:js},{data:ps},{data:ms},{data:sup},{data:sm},{data:pat},{data:wos},{data:sl}]=await Promise.all([
     sb.from('jobs').select('*'),sb.from('procurement').select('*'),sb.from('milestones').select('*'),
     sb.from('suppliers').select('*'),sb.from('step_master').select('*'),
-    sb.from('patterns').select('*'),sb.from('work_orders').select('*')]);
+    sb.from('patterns').select('*'),sb.from('work_orders').select('*'),
+    sb.from('sales_links').select('*')]);
+  SALECODE={};(sl||[]).forEach(r=>{if(r.code)SALECODE[r.code]=r.sale_name});
   if(pat&&pat.length)PATTERNS=pat.sort((a,b)=>(a.sort||0)-(b.sort||0));
   WOS={};(wos||[]).forEach(w=>WOS[w.job_id]=w);
   if(sup&&sup.length){SUPPLIERS=sup.map(x=>x.name);buildSupAlias(sup);
@@ -789,6 +904,11 @@ async function loadAll(){
   if(wp){const w=WOS[wp];if(w){document.body.classList.add('woview');renderWOPrint(w)}else toast('ไม่พบใบงาน '+wp)}
   const spv=new URLSearchParams(location.search).get('sup');
   if(spv)renderSupShare(spv);
+  const slc=new URLSearchParams(location.search).get('sale');
+  if(slc){const nm=SALECODE[slc];
+    if(nm)renderSaleShare(nm);
+    else{document.body.classList.add('supview');
+      $('#woPrint').innerHTML='<div style="padding:50px 20px;text-align:center;color:var(--mut);font-size:15px">ไม่พบหน้านี้ครับ — ลิงก์อาจถูกยกเลิกแล้ว<br>ขอลิงก์ใหม่จากทีมจัดซื้อได้เลย</div>'}}
   const sc=new URLSearchParams(location.search).get('s');
   if(sc){const nm=SUPCODE[sc];
     if(nm)renderSupShare(nm);
@@ -881,7 +1001,7 @@ async function loadInbox(){ if(DEMO||!sb)return;
       sb.from('inbox').select('*').not('done_at','is',null).order('done_at',{ascending:false}).limit(5)]);
     if(e1)throw e1;INBOX=pend||[];INDONE=done||[];
   }catch(e){INBOX=[];INDONE=[]}
-  if(view==='running')renderInbox();
+  if(view==='running'){renderInbox();renderHold(holdIds)}
 }
 function ageTxt(ts){const mn=Math.max(1,Math.round((Date.now()-new Date(ts))/6e4));
   if(mn<60)return{t:'ค้าง '+mn+' นาที',c:'ok'};
@@ -1000,6 +1120,7 @@ function renderInbox(){
 
 /* ============ wizard: เปิดงาน ============ */
 $('#bNew').onclick=()=>wizStep1();
+$('#bSale').onclick=()=>openSaleLinks();
 function wizStep1(pre){
   $('#wizBox').innerHTML=`<h2>＋ เปิดงาน</h2>
     <div class="fld"><label>พิมพ์เลขงาน (MD-xxx / GSC-xxx / MDS / SAN)</label>
@@ -1171,6 +1292,7 @@ function visible(skipKpi){
       if(filt.pic&&(PROC[id].pic||'')!==filt.pic)return false;
       if(filt.sale&&(j.sale_name||'(ไม่ระบุ)')!==filt.sale)return false;
       if(!skipKpi&&filt.kpi&&!kpiMatch(id,filt.kpi))return false;
+      if(filt.flag&&effFlag([id])!==filt.flag)return false;
       if(filt.grp&&groupKey(id)!==filt.grp)return false;
       if(s&&!((id||'')+(j.name||'')+(j.customer||'')+((PROC[id]||{}).member_ids||'')).toLowerCase().includes(s))return false;
       return true})
@@ -1187,8 +1309,10 @@ function render(){
   const sales=[...new Set(Object.values(PROC).filter(p=>p.tracked!==false)
     .map(p=>(JOBS[p.job_id]||{}).sale_name||'(ไม่ระบุ)'))].sort();
   fillSel('#fSale',sales,filt.sale);
-  const baseIds=visible(true);
-  const ids=visible();
+  const baseAll=visible(true);
+  const holdIds=baseAll.filter(isHold);        // พักงานไม่นับรวมกับงานวิ่ง (ห้ามปนกัน ไม่งั้นสับสน)
+  const baseIds=baseAll.filter(id=>!isHold(id));
+  const ids=visible().filter(id=>!isHold(id));
   const late=baseIds.filter(id=>kpiMatch(id,'late')).length;
   const dueToday=baseIds.filter(id=>kpiMatch(id,'today')).length;
   const noPlan=baseIds.filter(id=>kpiMatch(id,'noplan')).length;
@@ -1218,6 +1342,7 @@ function render(){
     render()});
   $('#topRow').style.display=view==='running'?'block':'none';
   $('#ibWrap').style.display=view==='running'?'':'none';
+  $('#holdWrap').style.display=view==='running'?'':'none';
   $('#boardRow').style.gridTemplateColumns=view==='running'?'':'1fr';
   if(view==='running')renderInbox();
   ['running','calWrap','ganttWrap','supWrap','kpiWrap','todoWrap'].forEach(x=>$('#'+x).style.display='none');
@@ -1269,8 +1394,10 @@ function renderRunning(ids){
     const j=JOBS[id]||{},p=PROC[id]||{};
     const pr=multi?all.reduce((a,x)=>{const q=progress(x);return {done:a.done+q.done,total:a.total+q.total}},{done:0,total:0}):progress(id);
     const n=multi?all.map(nextMs).filter(Boolean).sort((a,b)=>(a.plan_date||'9999')<(b.plan_date||'9999')?-1:1)[0]:nextMs(id);
-    const h=multi?(all.every(jobDone)?'good':all.map(x=>jobDone(x)?'good':health(x)).sort((a,b)=>HRANK[a]-HRANK[b])[0])
+    const h0=multi?(all.every(jobDone)?'good':all.map(x=>jobDone(x)?'good':health(x)).sort((a,b)=>HRANK[a]-HRANK[b])[0])
                  :(jobDone(id)?'good':health(id));
+    const mf=flagOf(all);                       // ติดธงเองแล้วใช้สีธงนั้น ไม่ต้องให้ระบบเดา
+    const h=mf?FLAGCLS[mf]:h0;
     const im=imgOf(id);
     let wait='<span class="pill ok">✔ ครบทุกขั้นแล้ว</span>';
     if(n){const dl=n.plan_date?Math.round((D(n.plan_date)-today())/864e5):null;
@@ -1278,7 +1405,8 @@ function renderRunning(ids){
         (dl===null?'<span class="pill warn">ยังไม่ใส่วันแผน</span>':dl<0?`<span class="pill late">เลท ${-dl} วัน</span>`:dl===0?'<span class="pill warn">วันนี้</span>':`<span class="pill ok">อีก ${dl} วัน</span>`)}
     const head=multi?(designNorm(j.name||'')||id):id;
     const nifty=niftyUrl(id);
-    return band+`<div class="jcard ${h}" data-id="${esc(id)}">
+    return band+`<div class="jcard ${h}" data-id="${esc(id)}" data-ids="${esc(all.join(','))}" draggable="true">
+      ${flagDots(all)}
       <div class="jhead">
         ${im?`<img src="${esc(im)}" loading="lazy">`:'<div class="noimg">📷<span>แตะเพื่อใส่รูป</span></div>'}
         <div style="flex:1;min-width:0">
@@ -1290,14 +1418,17 @@ function renderRunning(ids){
           <div class="pbar"><i style="width:${pr.total?pr.done/pr.total*100:0}%"></i></div>
         </div></div>
       <div class="wait">${pr.done}/${pr.total} ขั้น · ${wait}
-        <span class="jGo">${nifty?`<a class="btn2" href="${nifty}" target="_blank" rel="noopener" title="เปิดใน Nifty">↗ Nifty</a>`:''}${WOS[id]?`<button class="btn2 jWo" data-one="${esc(id)}">📄 ใบงาน</button>`:''}${pr.total?'':`<button class="btnG jPlan" data-one="${esc(id)}">＋ ลงแผน</button>`}</span>
+        <span class="jGo">${nifty?`<a class="btn2" href="${nifty}" target="_blank" rel="noopener" title="เปิดใน Nifty">↗ Nifty</a>`:''}${WOS[id]?`<button class="btn2 jWo" data-one="${esc(id)}">📄 ใบงาน</button>`:''}${pr.total?'':`<button class="btnG jPlan" data-one="${esc(id)}">＋ ลงแผน</button>`}<button class="btn2 jHold" data-ids="${esc(all.join(','))}" title="req ไม่จบ / ไทม์ไลน์ไม่เคลียร์ — พักไว้ก่อน ไม่ปนกับงานวิ่ง">⏸ พัก</button></span>
       </div></div>`}).join('')||'<div style="color:var(--mut);padding:30px;text-align:center">ยังไม่มีงานบนบอร์ด — กด ＋ เปิดงาน</div>';
   $$('#running .jId,#running .jWo').forEach(t=>t.onclick=e=>{e.stopPropagation();openDrawer(t.dataset.one)});
   $$('#running .jPlan').forEach(b=>b.onclick=e=>{e.stopPropagation();window.__planGroup=null;wizStep1(b.dataset.one)});
   $$('#running .jGo a').forEach(a=>a.onclick=e=>e.stopPropagation());
   $$('#running .tag.grp').forEach(t=>t.onclick=e=>{e.stopPropagation();
     filt.grp=filt.grp===t.dataset.g?'':t.dataset.g;render()});
+  $$('#running .jHold').forEach(b=>b.onclick=e=>{e.stopPropagation();holdAsk(b.dataset.ids.split(','))});
+  wireFlags('#running');
   $$('#running .jcard').forEach(c=>c.onclick=()=>openDrawer(c.dataset.id));
+  wireDrag();
 }
 /* --- calendar --- */
 function renderCal(ids){
@@ -1624,6 +1755,78 @@ function renderSupShare(name){
     ${!nowI.length&&!inI.length?'<div style="color:var(--mut);padding:24px">ตอนนี้ไม่มีงานค้างครับ 🎉</div>':''}`;
 }
 
+/* ============ ลิงก์เซล: ดูแผนงานของตัวเอง (read-only คนละลิงก์กับบอร์ดจัดซื้อ) ============ */
+function saleLink(name){const c=Object.keys(SALECODE).find(k=>SALECODE[k]===name);
+  return c?location.origin+location.pathname+'?sale='+c:''}
+async function provisionSaleCodes(names){        // เซลคนไหนยังไม่มีรหัส สุ่มให้
+  for(const nm of names){ if(!nm||nm==='(ไม่ระบุ)')continue;
+    if(Object.values(SALECODE).includes(nm))continue;
+    const c='s'+Math.random().toString(36).slice(2,8);
+    const {error}=await sb.from('sales_links').insert({code:c,sale_name:nm});
+    if(error){toast('สร้างลิงก์เซลไม่ได้: '+error.message);return}
+    SALECODE[c]=nm}}
+async function openSaleLinks(){
+  const names=[...new Set(Object.values(PROC).filter(x=>x.tracked!==false)
+    .map(x=>(JOBS[x.job_id]||{}).sale_name).filter(n=>n&&n!=='(ไม่ระบุ)'))].sort();
+  await provisionSaleCodes(names);
+  const d=document.createElement('div');
+  d.style.cssText='position:fixed;inset:0;background:rgba(20,18,14,.45);z-index:80;display:flex;align-items:center;justify-content:center;padding:16px';
+  d.innerHTML=`<div class="box" style="width:460px;max-height:80vh;overflow:auto">
+    <h2>🔗 ลิงก์ให้เซลดูแผนงานของตัวเอง</h2>
+    <p style="font-size:12px;color:var(--ink-3);line-height:1.45;margin:2px 0 12px">
+      แต่ละคนได้ลิงก์ของตัวเอง เห็นแค่งานที่ตัวเองเปิด · <b>ดูได้เท่านั้น แก้แผนไม่ได้</b><br>
+      อย่าส่งลิงก์บอร์ดจัดซื้อ (อันนี้) ให้เซล — ส่งลิงก์ด้านล่างแทน</p>
+    ${names.length?names.map(n=>`<div style="display:flex;gap:8px;align-items:center;border-top:1px solid var(--line);padding:7px 0">
+      <b style="flex:1;font-size:13px">${esc(n)}</b>
+      <button class="btn2 slCopy" data-n="${esc(n)}">📋 copy ลิงก์</button>
+      <a class="btn2" href="${esc(saleLink(n))}" target="_blank">↗ ดู</a></div>`).join('')
+      :'<div style="color:var(--mut);font-size:12.5px">ยังไม่มีชื่อเซลในงานบนบอร์ด</div>'}
+    <div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="btnP" id="slClose">ปิด</button></div></div>`;
+  document.body.appendChild(d);
+  d.querySelector('#slClose').onclick=()=>d.remove();
+  d.onclick=e=>{if(e.target===d)d.remove()};
+  d.querySelectorAll('.slCopy').forEach(b=>b.onclick=()=>{
+    navigator.clipboard.writeText(saleLink(b.dataset.n))
+      .then(()=>toast('copy ลิงก์ของ '+b.dataset.n+' แล้ว — ส่งใน LINE ให้เซลเซฟไว้ได้เลย'))});
+}
+function renderSaleShare(name){
+  document.body.classList.add('supview');
+  const mine=Object.values(PROC).filter(x=>x.tracked!==false).map(x=>x.job_id)
+    .filter(id=>((JOBS[id]||{}).sale_name||'')===name);
+  const live=mine.filter(id=>!jobDone(id));
+  const doneN=mine.length-live.length;
+  const held=live.filter(isHold),run=live.filter(id=>!isHold(id));
+  const RG=runGroups(run),HG=runGroups(held);
+  const DOT={g:'#2e7d4f',y:'#d8a200',r:'#b3261e'};
+  const SLBL={g:'ตามแผน',y:'เสี่ยง',r:'หลุดแผน'};
+  const row=(grp,hold)=>{const id=grp.lead,all=grp.ids,multi=all.length>1;
+    const j=JOBS[id]||{},p=PROC[id]||{};
+    const f=effFlag(all);
+    const n=all.map(nextMs).filter(Boolean).sort((a,b)=>(a.plan_date||'9999')<(b.plan_date||'9999')?-1:1)[0];
+    const pr=all.reduce((a,x)=>{const q=progress(x);return{done:a.done+q.done,total:a.total+q.total}},{done:0,total:0});
+    const dl=n&&n.plan_date?Math.round((D(n.plan_date)-today())/864e5):null;
+    const u=imgOf(id);
+    const step=hold?'<span class="ssStep" style="background:#55544b">⏸ พักงาน</span>'
+      :n?`<span class="ssStep">${esc(n.label)}</span>`:'<span class="ssStep" style="background:#2e7d4f">ครบทุกขั้นแล้ว</span>';
+    const when=hold?(p.hold_note?'📝 '+esc(p.hold_note):'รอข้อมูลจากเซล/ลูกค้า')
+      :n?(n.plan_date?((dl<0?'⚠ เลยแผน '+(-dl)+' วัน · ':dl===0?'วันนี้ · ':'อีก '+dl+' วัน · ')+'แผน '+thFull(n.plan_date)):'ยังไม่กำหนดวัน')
+      :'รอส่ง/ส่งแล้ว';
+    return `<div class="ssRow">${u?`<img src="${esc(u)}" loading="lazy">`:'<span class="ph2">🧵</span>'}
+      <span class="ssMid">
+        <div class="ssNick"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${DOT[f]};margin-right:5px" title="${SLBL[f]}"></span>${esc(p.nickname||designNorm(j.name||'')||id)}</div>
+        <div style="font-size:11.5px;color:#6b6760;margin:1px 0 2px">${esc(multi?all.join(' · '):id)} · ${pr.done}/${pr.total} ขั้น · ส่งลูกค้า ${j.due_date?thDate(j.due_date):'—'}</div>
+        <div class="ssLine">${step}<span class="ssDate ${(!hold&&dl!==null&&dl<0)?'lateD':''}">${when}</span></div>
+      </span></div>`};
+  const sec=(t,n)=>`<div class="supsec" style="padding-left:0">${t} (${n})</div>`;
+  $('#woPrint').innerHTML=`<h1 style="font-family:var(--font-display);font-size:22px;margin:6px 0 2px">📋 แผนงานของ ${esc(name)}</h1>
+    <div style="font-size:12.5px;color:#6b6760;margin-bottom:12px">อัพเดทสดจากบอร์ดจัดซื้อ ${new Date().toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'})}
+      · 🟢 ตามแผน 🟡 เสี่ยง 🔴 หลุดแผน · หน้านี้ดูได้เท่านั้น แผนแก้โดยทีมจัดซื้อ</div>
+    ${held.length?sec('⏸ พักงาน — รออะไรอยู่ (ช่วยเคลียร์ให้ด้วย)',HG.length)+HG.map(g=>row(g,true)).join(''):''}
+    ${run.length?sec('🧵 งานที่กำลังวิ่ง',RG.length)+RG.map(g=>row(g,false)).join(''):''}
+    ${!live.length?'<div style="color:#6b6760;padding:24px">ตอนนี้ไม่มีงานค้างในระบบครับ 🎉</div>':''}
+    <div style="font-size:12px;color:#6b6760;margin-top:14px">จบแล้ว ${doneN} งาน</div>`;
+}
+
 /* ============ drawer ============ */
 let CUR=null;
 async function openDrawer(id){
@@ -1834,6 +2037,7 @@ function openCost(id){
 $('#fSearch').oninput=e=>{filt.q=e.target.value;render()};
 $('#fPic').onchange=e=>{filt.pic=e.target.value;render()};
 $('#fSale').onchange=e=>{filt.sale=e.target.value;render()};
+$('#fFlag').onchange=e=>{filt.flag=e.target.value;render()};
 $('#fDone').onchange=e=>{filt.done=e.target.checked;render()};
 
 /* ============ demo ============ */
