@@ -1540,8 +1540,9 @@ function renderTodo(){
       <div class="tdBtns">
         ${fee?`<button class="btn2 tdSkip" data-ids="${esc(ids.join(','))}">✓ ไม่ต้องลงแผน (ค่าจัดส่ง)</button>`
              :`<button class="btnG tdPlan" data-ids="${esc(ids.join(','))}">＋ ลงแผนทั้งชุด${ids.length>1?' ('+ids.length+' ไซส์)':''}</button>`}
-        ${(!fee&&ids.length>1)?`<button class="btnG tdPickGo" style="display:none"></button>
-          <span class="tdNote">หรือกดเลือกเฉพาะบางเลขงานด้านบน แล้วลงแผนเฉพาะที่เลือก</span>`:''}
+        ${(!fee&&ids.length>1)?`<button class="btnG tdPickGo" style="display:none"></button>`:''}
+        ${fee?'':`<button class="btn2 tdDrop" data-ids="${esc(ids.join(','))}" title="งานนี้ลงแผนที่อื่นไปแล้ว/ไม่ต้องลงแผน">✕ เอาออกจากคิว</button>`}
+        ${(!fee&&ids.length>1)?`<span class="tdNote">กดเลือกบางเลขงานด้านบน = ลงแผน/เอาออก เฉพาะที่เลือก</span>`:''}
       </div>
       </div>`};
   let lastSo=null;
@@ -1551,7 +1552,7 @@ function renderTodo(){
     lastSo=g.so||null;
     return h+card(g)};
   $('#todoWrap').innerHTML=G.length?
-    `<div class="tdHint">งานที่ยังไม่มีแผน — ออเดอร์เดียวกันอยู่ติดกัน · กดปุ่มเดียวลงแผนได้ทั้งชุด</div>`+G.map(block).join('')
+    `<div class="tdHint">งานที่ยังไม่มีแผน — ออเดอร์เดียวกันอยู่ติดกัน · กดปุ่มเดียวลงแผนได้ทั้งชุด · งานที่ลงไปแล้ว/ไม่ต้องลง กด "✕ เอาออกจากคิว"</div>`+G.map(block).join('')
     :'<div style="color:var(--mut);padding:40px;text-align:center">ลงแผนครบทุกงานแล้ว 🎉</div>';
   $$('#todoWrap .tdPlan').forEach(b=>b.onclick=()=>{
     const ids=b.dataset.ids.split(',');
@@ -1569,6 +1570,25 @@ function renderTodo(){
     btn.onclick=()=>{const ids=sel();if(!ids.length)return;
       window.__planGroup=ids.slice(1);wizStep1(ids[0])};
     sync();});
+  $$('#todoWrap .tdDrop').forEach(b=>b.onclick=async()=>{
+    const cd=b.closest('.tdCard');
+    const sel=[...cd.querySelectorAll('.tdId.on')].map(c=>c.dataset.id);
+    const ids=sel.length?sel:b.dataset.ids.split(',');
+    if(!confirm(`เอา ${ids.length} เลขงานออกจากคิวรอลงแผน?
+${ids.slice(0,6).join(', ')}${ids.length>6?' …':''}
+
+ดึงกลับได้ที่กล่องงานเข้า โซน "จบแล้ว"`))return;
+    for(const id of ids){
+      const ib=INBOX.find(x=>x.job_id===id);
+      if(ib){ if(!DEMO)await sb.from('inbox').update({done_at:new Date().toISOString(),done_by:cfg.who}).eq('id',ib.id);
+        ib.done_at=new Date().toISOString();ib.done_by=cfg.who;
+        INBOX=INBOX.filter(x=>x!==ib);INDONE.unshift(ib);INDONE=INDONE.slice(0,5); }
+      if(PROC[id]&&PROC[id].tracked!==false&&!(MS[id]||[]).length){   // อยู่บนบอร์ดแต่ไม่มีแผน ต้องเอาออกด้วย ไม่งั้นเด้งกลับมา
+        if(!DEMO)await procPatch(id,{tracked:false});
+        PROC[id].tracked=false;logEvent(id,'เอาออกจากคิวรอลงแผน','',cfg.who||'');
+      }
+    }
+    toast('เอาออกจากคิวแล้ว ✓ ('+ids.length+' เลขงาน)');renderTodo();renderInbox();updTodoBadge();});
   $$('#todoWrap .tdSkip').forEach(b=>b.onclick=async()=>{
     for(const id of b.dataset.ids.split(',')){
       const ib=INBOX.find(x=>x.job_id===id);
