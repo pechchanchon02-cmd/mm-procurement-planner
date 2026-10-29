@@ -825,7 +825,7 @@ async function gateOK(){ // รหัสทีมหน้าบอร์ด —
   const qp=new URLSearchParams(location.search);
   if(qp.get('s')||qp.get('wo')||qp.get('sup')||qp.get('sale'))return true;
   let pass=null;
-  try{const {data}=await sb.from('app_settings').select('value').eq('key','team_pass').single();
+  try{const {data}=await sb.from('app_settings').select('value').eq('key','team_pass').maybeSingle();
     pass=data&&data.value}catch(e){}
   if(!pass)return true;                       // ยังไม่ตั้งรหัสใน DB → เข้าได้ปกติ
   if(cfg.gate===pass)return true;             // เครื่องนี้เคยใส่ถูกแล้ว จำไว้ให้
@@ -859,7 +859,7 @@ function askWho(){
   d.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>{
     cfg.who=b.dataset.w;store.set(JSON.stringify(cfg));d.remove();toast('สวัสดี '+cfg.who+' 🎉')});
 }
-async function loadTeamPass(){try{const {data}=await sb.from('app_settings').select('value').eq('key','team_pass').single();
+async function loadTeamPass(){try{const {data}=await sb.from('app_settings').select('value').eq('key','team_pass').maybeSingle();
     return (data&&data.value)||''}catch(e){return ''}}
 function openCfg(){['Url','Key','Sheet','Gid1','Gid2'].forEach(k=>$('#c'+k).value=cfg[k.toLowerCase()]||'');
   if(sb)loadTeamPass().then(v=>{$('#cPass').value=v});
@@ -1001,7 +1001,7 @@ async function loadInbox(){ if(DEMO||!sb)return;
       sb.from('inbox').select('*').not('done_at','is',null).order('done_at',{ascending:false}).limit(5)]);
     if(e1)throw e1;INBOX=pend||[];INDONE=done||[];
   }catch(e){INBOX=[];INDONE=[]}
-  if(view==='running'){renderInbox();renderHold(holdIds)}
+  if(view==='running')renderInbox();
 }
 function ageTxt(ts){const mn=Math.max(1,Math.round((Date.now()-new Date(ts))/6e4));
   if(mn<60)return{t:'ค้าง '+mn+' นาที',c:'ok'};
@@ -1344,7 +1344,7 @@ function render(){
   $('#ibWrap').style.display=view==='running'?'':'none';
   $('#holdWrap').style.display=view==='running'?'':'none';
   $('#boardRow').style.gridTemplateColumns=view==='running'?'':'1fr';
-  if(view==='running')renderInbox();
+  if(view==='running'){renderInbox();renderHold(holdIds)}
   ['running','calWrap','ganttWrap','supWrap','kpiWrap','todoWrap'].forEach(x=>$('#'+x).style.display='none');
   if(view==='running'){$('#running').style.display='grid';renderRunning(ids)}
   if(view==='cal'){$('#calWrap').style.display='block';renderCal(ids)}
