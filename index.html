@@ -1475,7 +1475,9 @@ function todoList(){
 function todoGroups(){
   const g={},L=todoList();
   L.forEach(it=>{
-    const k=designKey(it.id);
+    // ชื่องานใน Nifty บางทีเขียนแค่ "สีพิเศษ" → ใช้รหัสสีผ้าที่เซลพิมพ์มา (BC4TD, BC8DF) แยกชุดให้ถูก
+    const cc=(String(it.txt||'').match(/(BC\d{1,2}[A-Z]{2,3})/i)||[])[1]||'';
+    const k=designKey(it.id)+(cc?' ‖ '+cc.toUpperCase():'');
     (g[k]=g[k]||{key:k,items:[],due:null,txt:''}).items.push(it);
     const j=JOBS[it.id]||{};
     if(j.due_date&&(!g[k].due||j.due_date<g[k].due))g[k].due=j.due_date;
@@ -1517,7 +1519,7 @@ function renderTodo(){
     const ids=g.items.map(x=>x.id);
     const fee=ids.every(isFeeJob);
     const title=(()=>{const p=(g.key||'').split(' ‖ ');
-      const d=p[1]&&p[1]!==ids[0]?p[1]:'';
+      const d=(p[1]&&p[1]!==ids[0]?p[1]:'')+(p[2]?` (${p[2]})`:'');
       return d?esc(d)+(p[0]&&p[0]!=='-'?' <span class="tdSo">'+esc(p[0])+'</span>':''):esc(ids[0])})();
     const dd=g.due?(()=>{const n=Math.round((D(g.due)-today())/864e5);
       return `<span class="pill ${n<0?'late':n<=3?'warn':'ok'}">ส่ง ${thDate(g.due)} · ${n<0?'เลย '+(-n)+' วัน':'อีก '+n+' วัน'}</span>`})():'<span class="pill muted">ยังไม่มีวันส่ง</span>';
