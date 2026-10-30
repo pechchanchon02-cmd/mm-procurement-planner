@@ -404,6 +404,11 @@ body.supview .ssDate.lateD{background:#b3261e;color:#fff}
 body.supview .ssRow a.btnwo{background:#0f7480;color:#fff}
 body.supview .ph2{background:#eceade}
 body.supview .ssRow img{border-color:#ddd9cf}
+.saleChips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.saleChips .sc{padding:4px 11px;font-size:12px;border:1px solid #ddd9cf;border-radius:999px;background:#fffffe;color:#4a463e;cursor:pointer}
+.saleChips .sc:hover{border-color:#0f7480}
+.saleChips .sc.on{background:#4C1F15;border-color:#4C1F15;color:#fff;font-weight:600}
+.ssSub{font-size:11.5px;color:#6b6760;margin:1px 0 2px}
 
 /* --- ตารางเลขงานพี่น้องในใบงาน (ไล่ไซส์ + จำนวน + ลิงก์ Nifty รายเลข) --- */
 .sibBox{border:1px solid var(--line);border-radius:9px;padding:7px 8px;margin:8px 0}
@@ -1059,6 +1064,7 @@ async function loadInbox(){ if(DEMO||!sb)return;
       sb.from('inbox').select('*').is('done_at',null).order('created_at'),
       sb.from('inbox').select('*').not('done_at','is',null).order('done_at',{ascending:false}).limit(5)]);
     if(e1)throw e1;INBOX=pend||[];INDONE=done||[];
+    if(document.body.classList.contains('saleview'))return drawSale();
   }catch(e){INBOX=[];INDONE=[]}
   if(view==='running')renderInbox();
 }
@@ -1087,10 +1093,8 @@ function renderInbox(){
       <div class="ibMain" data-x="${r.id}" title="กดเพื่อไปที่การ์ดงานในหน้ารอลงแผน"><b>${title(r)||'(ว่าง)'}</b>
         <small>${done?`✓ รับโดย <b>${esc(r.done_by||'?')}</b> · ${thTs(r.done_at)}`:`${esc(r.created_by||'?')} · ${thTs(r.created_at)} · <span class="pill ${a.c}">${a.t}</span>`}</small></div>
       <span class="ibAct">${done?`<button class="btn2 ibBack" data-i="${r.id}" title="ดึงกลับมารอรับ">↩</button>`:
-        `<button class="btn2 ibEdit" data-i="${r.id}" title="แก้ไข">✏️</button>
-         ${r.job_id?`<button class="btnP ibOpen" data-i="${r.id}" title="เปิดงาน ${esc(r.job_id)}">▶</button>`
-                   :`<button class="btnP ibEdit" data-i="${r.id}" data-job="1" title="ใส่เลขงาน">🔗</button>`}
-         <button class="btn2 ibClr" data-i="${r.id}" title="เคลียร์">✓</button>`}</span>
+        (r.job_id?`<button class="btn2 ibEdit" data-i="${r.id}" title="แก้ไข">✏️</button>`
+                 :`<button class="btnP ibEdit" data-i="${r.id}" data-job="1" title="ใส่เลขงาน">🔗</button>`)}</span>
       </div>`};
   const ibGroups=()=>{           // รวมงานเข้าเป็น "รายการ" แบบเดียวกับหน้ารอลงแผน
     const g={},ord=[];
@@ -1106,13 +1110,9 @@ function renderInbox(){
     const a=ageTxt(rows.map(r=>r.created_at).sort()[0]);
     const inf=ids.length?todoInfo(ids):null;
     const ttl=(grouped?designNorm(jobName(ids[0])):'')||ids[0]||'(ว่าง)';
-    const rid=rows.map(r=>r.id).join(',');
     return `<div class="ibRow">
       <div class="ibMain" data-x="${rows[0].id}" title="กดเพื่อไปที่การ์ดงานในหน้ารอลงแผน"><b>${esc(ttl)}</b>
         <small>${ids.length} ไซส์${inf&&inf.qty?` · <b>${inf.qty.toLocaleString()} ตัว</b>`:''} · <span class="pill ${a.c}">${a.t}</span></small></div>
-      <span class="ibAct">
-        <button class="btnP ibOpenG" data-jobs="${esc(ids.join(','))}" title="ลงแผนทั้งชุด ${ids.length} ไซส์">▶</button>
-        <button class="btn2 ibClrG" data-ids="${rid}" title="เคลียร์ทั้งชุด">✓</button></span>
       </div>`};
   el.innerHTML=`<div class="supbox ibBox">
     <h2>📥 งานเข้า ${INBOX.length?`<span class="cnt" style="background:var(--warn-bg);color:var(--warn-ink)">${INBOX.length}</span>`:''}
@@ -1827,7 +1827,7 @@ async function provisionSaleCodes(names){        // เซลคนไหนย�
 async function openSaleLinks(){
   const names=[...new Set(Object.values(PROC).filter(x=>x.tracked!==false)
     .map(x=>(JOBS[x.job_id]||{}).sale_name).filter(n=>n&&n!=='(ไม่ระบุ)'))].sort();
-  await provisionSaleCodes(names);
+  await provisionSaleCodes(['ทั้งหมด',...names]);
   const d=document.createElement('div');
   d.style.cssText='position:fixed;inset:0;background:rgba(20,18,14,.45);z-index:80;display:flex;align-items:center;justify-content:center;padding:16px';
   d.innerHTML=`<div class="box" style="width:460px;max-height:80vh;overflow:auto">
@@ -1835,6 +1835,10 @@ async function openSaleLinks(){
     <p style="font-size:12px;color:var(--ink-3);line-height:1.45;margin:2px 0 12px">
       แต่ละคนได้ลิงก์ของตัวเอง เห็นแค่งานที่ตัวเองเปิด · <b>ดูได้เท่านั้น แก้แผนไม่ได้</b><br>
       อย่าส่งลิงก์บอร์ดจัดซื้อ (อันนี้) ให้เซล — ส่งลิงก์ด้านล่างแทน</p>
+    <div style="border-top:1px solid var(--line);padding:8px 0;display:flex;gap:8px;align-items:center">
+      <b style="flex:1;font-size:13px">📣 ลิงก์รวมทีมขาย <span style="font-weight:400;color:var(--ink-3)">(ส่งในกลุ่มไลน์ — มีปุ่มกรองรายชื่อเซล)</span></b>
+      <button class="btn2 slCopy" data-n="ทั้งหมด">📋 copy</button>
+      <a class="btn2" href="${esc(saleLink('ทั้งหมด'))}" target="_blank">↗ ดู</a></div>
     ${names.length?names.map(n=>`<div style="display:flex;gap:8px;align-items:center;border-top:1px solid var(--line);padding:7px 0">
       <b style="flex:1;font-size:13px">${esc(n)}</b>
       <button class="btn2 slCopy" data-n="${esc(n)}">📋 copy ลิงก์</button>
@@ -1848,42 +1852,61 @@ async function openSaleLinks(){
     navigator.clipboard.writeText(saleLink(b.dataset.n))
       .then(()=>toast('copy ลิงก์ของ '+b.dataset.n+' แล้ว — ส่งใน LINE ให้เซลเซฟไว้ได้เลย'))});
 }
+let SALEOWNER=null,SALEFILT='';     // SALEOWNER = เซลที่ลิงก์นี้ผูกไว้ (null = ลิงก์รวมของทีม) · SALEFILT = ปุ่มกรองที่กดอยู่
+function saleNames(){
+  return [...new Set(Object.values(PROC).filter(p=>p.tracked!==false)
+    .map(p=>(JOBS[p.job_id]||{}).sale_name).filter(Boolean))]
+    .concat(INBOX.map(r=>(JOBS[r.job_id]||{}).sale_name).filter(Boolean))
+    .filter((v,i,a)=>a.indexOf(v)===i).sort()}
 function renderSaleShare(name){
-  document.body.classList.add('supview');
-  const mine=Object.values(PROC).filter(x=>x.tracked!==false).map(x=>x.job_id)
-    .filter(id=>((JOBS[id]||{}).sale_name||'')===name);
-  const live=mine.filter(id=>!jobDone(id));
-  const doneN=mine.length-live.length;
-  const held=live.filter(isHold),run=live.filter(id=>!isHold(id));
-  const RG=runGroups(run),HG=runGroups(held);
+  SALEOWNER=(name&&name!=='ทั้งหมด')?name:null;
+  document.body.classList.add('supview','saleview');
+  drawSale()}
+function drawSale(){
+  const who=SALEOWNER||SALEFILT;                        // ลิงก์ส่วนตัวล็อกชื่อไว้ ลิงก์รวมใช้ปุ่มกรอง
+  const mine=id=>!who||((JOBS[id]||{}).sale_name||'')===who;
+  const tracked=Object.values(PROC).filter(p=>p.tracked!==false).map(p=>p.job_id);
+  const planned=tracked.filter(id=>(MS[id]||[]).length&&!jobDone(id)&&!isHold(id)&&mine(id));
+  const heldIds=tracked.filter(id=>isHold(id)&&!jobDone(id)&&mine(id));
+  const doneN=tracked.filter(id=>jobDone(id)&&mine(id)).length;
+  const queue=todoList().map(t=>t.id).filter((v,i,a)=>a.indexOf(v)===i)
+    .filter(id=>!isHold(id)&&!jobDone(id)&&mine(id));
   const DOT={g:'#2e7d4f',y:'#d8a200',r:'#b3261e'};
-  const SLBL={g:'ตามแผน',y:'เสี่ยง',r:'หลุดแผน'};
-  const row=(grp,hold)=>{const id=grp.lead,all=grp.ids,multi=all.length>1;
+  const row=(grp,kind)=>{const id=grp.lead,all=grp.ids,multi=all.length>1;
     const j=JOBS[id]||{},p=PROC[id]||{};
     const f=effFlag(all);
     const n=all.map(nextMs).filter(Boolean).sort((a,b)=>(a.plan_date||'9999')<(b.plan_date||'9999')?-1:1)[0];
     const pr=all.reduce((a,x)=>{const q=progress(x);return{done:a.done+q.done,total:a.total+q.total}},{done:0,total:0});
     const dl=n&&n.plan_date?Math.round((D(n.plan_date)-today())/864e5):null;
     const u=imgOf(id);
-    const step=hold?'<span class="ssStep" style="background:#55544b">⏸ พักงาน</span>'
-      :n?`<span class="ssStep">${esc(n.label)}</span>`:'<span class="ssStep" style="background:#2e7d4f">ครบทุกขั้นแล้ว</span>';
-    const when=hold?(p.hold_note?'📝 '+esc(p.hold_note):'รอข้อมูลจากเซล/ลูกค้า')
-      :n?(n.plan_date?((dl<0?'⚠ เลยแผน '+(-dl)+' วัน · ':dl===0?'วันนี้ · ':'อีก '+dl+' วัน · ')+'แผน '+thFull(n.plan_date)):'ยังไม่กำหนดวัน')
-      :'รอส่ง/ส่งแล้ว';
+    const qty=all.reduce((t,x)=>t+(parseQty(x)||0),0);
+    let step,when;
+    if(kind==='queue'){step='<span class="ssStep" style="background:#b3261e">🔴 ยังไม่ลงแผน</span>';
+      when='จัดซื้อยังไม่ได้วางแผนงานนี้';}
+    else if(kind==='hold'){step='<span class="ssStep" style="background:#55544b">⏸ พักงาน</span>';
+      when=p.hold_note?'📝 '+esc(p.hold_note):'ติดอยู่ รอเคลียร์';}
+    else{step=n?`<span class="ssStep">${esc(n.label)}</span>`:'<span class="ssStep" style="background:#2e7d4f">ครบทุกขั้นแล้ว</span>';
+      when=n?(n.plan_date?((dl<0?'⚠ เลยแผน '+(-dl)+' วัน · ':dl===0?'วันนี้ · ':'อีก '+dl+' วัน · ')+'แผน '+thFull(n.plan_date)):'ลงแผนแล้ว ยังไม่ใส่วันที่'):'รอส่ง';}
     return `<div class="ssRow">${u?`<img src="${esc(u)}" loading="lazy">`:'<span class="ph2">🧵</span>'}
       <span class="ssMid">
-        <div class="ssNick"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${DOT[f]};margin-right:5px" title="${SLBL[f]}"></span>${esc(p.nickname||designNorm(j.name||'')||id)}</div>
-        <div style="font-size:11.5px;color:#6b6760;margin:1px 0 2px">${esc(multi?all.join(' · '):id)} · ${pr.done}/${pr.total} ขั้น · ส่งลูกค้า ${j.due_date?thDate(j.due_date):'—'}</div>
-        <div class="ssLine">${step}<span class="ssDate ${(!hold&&dl!==null&&dl<0)?'lateD':''}">${when}</span></div>
+        <div class="ssNick"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${DOT[f]};margin-right:5px"></span>${esc(p.nickname||designNorm(jobName(id))||id)}</div>
+        <div class="ssSub">${esc(multi?all.join(' · '):id)}${qty?' · '+qty.toLocaleString()+' ตัว':''}${kind==='run'?` · ${pr.done}/${pr.total} ขั้น`:''} · ส่งลูกค้า ${j.due_date?thDate(j.due_date):'—'}${(!SALEOWNER&&j.sale_name)?' · เซล '+esc(j.sale_name):''}</div>
+        <div class="ssLine">${step}<span class="ssDate ${(kind==='run'&&dl!==null&&dl<0)?'lateD':''}">${when}</span></div>
       </span></div>`};
   const sec=(t,n)=>`<div class="supsec" style="padding-left:0">${t} (${n})</div>`;
-  $('#woPrint').innerHTML=`<h1 style="font-family:var(--font-display);font-size:22px;margin:6px 0 2px">📋 แผนงานของ ${esc(name)}</h1>
-    <div style="font-size:12.5px;color:#6b6760;margin-bottom:12px">อัพเดทสดจากบอร์ดจัดซื้อ ${new Date().toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'})}
-      · 🟢 ตามแผน 🟡 เสี่ยง 🔴 หลุดแผน · หน้านี้ดูได้เท่านั้น แผนแก้โดยทีมจัดซื้อ</div>
-    ${held.length?sec('⏸ พักงาน — รออะไรอยู่ (ช่วยเคลียร์ให้ด้วย)',HG.length)+HG.map(g=>row(g,true)).join(''):''}
-    ${run.length?sec('🧵 งานที่กำลังวิ่ง',RG.length)+RG.map(g=>row(g,false)).join(''):''}
-    ${!live.length?'<div style="color:#6b6760;padding:24px">ตอนนี้ไม่มีงานค้างในระบบครับ 🎉</div>':''}
+  const QG=runGroups(queue),HG=runGroups(heldIds),RG=runGroups(planned);
+  const chips=SALEOWNER?'':`<div class="saleChips"><button class="sc ${SALEFILT?'':'on'}" data-s="">ทั้งหมด</button>`
+    +saleNames().map(n=>`<button class="sc ${SALEFILT===n?'on':''}" data-s="${esc(n)}">${esc(n)}</button>`).join('')+'</div>';
+  $('#woPrint').innerHTML=`<h1 style="font-family:var(--font-display);font-size:22px;margin:6px 0 2px">📋 แผนงานผลิต${SALEOWNER?' ของ '+esc(SALEOWNER):' — ทีมขาย'}</h1>
+    <div style="font-size:12.5px;color:#6b6760;margin-bottom:10px">อัพเดทสดจากบอร์ดจัดซื้อ ${new Date().toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'})}
+      · 🟢 ตามแผน 🟡 เสี่ยง 🔴 หลุดแผน · <b>หน้านี้ดูได้อย่างเดียว</b> แผนแก้โดยทีมจัดซื้อ</div>
+    ${chips}
+    ${queue.length?sec('🔴 ยังไม่ลงแผน — จัดซื้อยังไม่ได้วางแผน',QG.length)+QG.map(g=>row(g,'queue')).join(''):''}
+    ${heldIds.length?sec('⏸ พักงาน — ติดอะไรอยู่ (ช่วยเคลียร์ให้ด้วย)',HG.length)+HG.map(g=>row(g,'hold')).join(''):''}
+    ${planned.length?sec('🟢 ลงแผนแล้ว — กำลังวิ่ง',RG.length)+RG.map(g=>row(g,'run')).join(''):''}
+    ${!queue.length&&!heldIds.length&&!planned.length?'<div style="color:#6b6760;padding:24px">ตอนนี้ไม่มีงานค้างในระบบครับ 🎉</div>':''}
     <div style="font-size:12px;color:#6b6760;margin-top:14px">จบแล้ว ${doneN} งาน</div>`;
+  $$('#woPrint .saleChips .sc').forEach(b=>b.onclick=()=>{SALEFILT=b.dataset.s;drawSale()});
 }
 
 /* ============ drawer ============ */
