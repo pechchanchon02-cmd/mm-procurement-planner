@@ -999,6 +999,7 @@ async function refreshRaw(){
     if(ups.length){await sb.from('jobs').upsert(ups.map(jobRow));render();toast('อัพเดทข้อมูลจาก raw แล้ว '+ups.length+' งาน')}
     if(INBOX&&INBOX.length)renderInbox();          // ตอนนี้จับกลุ่มได้แล้ว ตัวเลขในกล่องงานเข้าถึงจะถูก
     updTodoBadge();if(view==='todo')renderTodo();
+    if(document.body.classList.contains('saleview'))drawSale();   // ชื่องานเพิ่งมาจาก raw → หน้าเซลวาดใหม่ให้ชื่อขึ้น
   }catch(e){console.warn('refreshRaw:',e.message)}
 }
 async function logEvent(job_id,field,oldv,newv){if(DEMO||!sb)return;
@@ -1875,6 +1876,7 @@ function drawSale(){
   const row=(grp,kind)=>{const id=grp.lead,all=grp.ids,multi=all.length>1;
     const j=JOBS[id]||{},p=PROC[id]||{};
     const f=effFlag(all);
+    const dotC=flagOf(all)?DOT[f]:(kind==='queue'?'#b3261e':kind==='hold'?'#55544b':DOT[f]);
     const n=all.map(nextMs).filter(Boolean).sort((a,b)=>(a.plan_date||'9999')<(b.plan_date||'9999')?-1:1)[0];
     const pr=all.reduce((a,x)=>{const q=progress(x);return{done:a.done+q.done,total:a.total+q.total}},{done:0,total:0});
     const dl=n&&n.plan_date?Math.round((D(n.plan_date)-today())/864e5):null;
@@ -1889,7 +1891,7 @@ function drawSale(){
       when=n?(n.plan_date?((dl<0?'⚠ เลยแผน '+(-dl)+' วัน · ':dl===0?'วันนี้ · ':'อีก '+dl+' วัน · ')+'แผน '+thFull(n.plan_date)):'ลงแผนแล้ว ยังไม่ใส่วันที่'):'รอส่ง';}
     return `<div class="ssRow">${u?`<img src="${esc(u)}" loading="lazy">`:'<span class="ph2">🧵</span>'}
       <span class="ssMid">
-        <div class="ssNick"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${DOT[f]};margin-right:5px"></span>${esc(p.nickname||designNorm(jobName(id))||id)}</div>
+        <div class="ssNick"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${dotC};margin-right:5px"></span>${esc(p.nickname||designNorm(jobName(id))||id)}</div>
         <div class="ssSub">${esc(multi?all.join(' · '):id)}${qty?' · '+qty.toLocaleString()+' ตัว':''}${kind==='run'?` · ${pr.done}/${pr.total} ขั้น`:''} · ส่งลูกค้า ${j.due_date?thDate(j.due_date):'—'}${(!SALEOWNER&&j.sale_name)?' · เซล '+esc(j.sale_name):''}</div>
         <div class="ssLine">${step}<span class="ssDate ${(kind==='run'&&dl!==null&&dl<0)?'lateD':''}">${when}</span></div>
       </span></div>`};
