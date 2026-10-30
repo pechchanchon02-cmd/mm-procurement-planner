@@ -784,6 +784,7 @@ function sizeOf(id){const nm=jobName(id);
   if(!m)m=nm.match(new RegExp('(?:ไซส์|ไซซ์|size)\\s*('+SZRE+')\\b','i'));  // "ไซส์ L"
   if(!m)m=nm.match(new RegExp('\\s('+SZRE+')(?=\\s|$)'));                 // "... XL" ท้ายชื่อ
   return m?m[1].toUpperCase():''}
+function nickOf(ids){for(const x of [].concat(ids)){const n=(PROC[x]||{}).nickname;if(n)return n}return ''}
 function siblingIds(id){        // เลขงานพี่น้อง = ออเดอร์+แบบเดียวกัน รวมไซส์ที่ถูกมัดไว้ในงานอื่นด้วย
   const key=designKey(id),out=new Set([id,...memberIds(id)]);
   Object.values(PROC).forEach(p=>{if(p.tracked===false)return;
@@ -888,7 +889,7 @@ function renderHold(ids){
   const w=$('#holdWrap');if(!w)return;
   const cards=runGroups(ids).map(grp=>{const id=grp.lead,all=grp.ids,multi=all.length>1;
     const j=JOBS[id]||{},p=PROC[id]||{};
-    const head=multi?(designNorm(j.name||'')||id):id;
+    const head=nickOf(all)||(multi?(designNorm(j.name||'')||id):id);
     return `<div class="hcard ${flagOf(all)}" data-id="${esc(id)}" data-ids="${esc(all.join(','))}">
       ${flagDots(all)}
       <div class="hTop">${(()=>{const im=imgOf(id);
@@ -1494,7 +1495,8 @@ function renderRunning(ids){
     if(n){const dl=n.plan_date?Math.round((D(n.plan_date)-today())/864e5):null;
       wait=`รอ: <b>${esc(n.label)}</b>${n.supplier?' @'+esc(n.supplier):''}`+
         (dl===null?'<span class="pill warn">ยังไม่ใส่วันแผน</span>':dl<0?`<span class="pill late">เลท ${-dl} วัน</span>`:dl===0?'<span class="pill warn">วันนี้</span>':`<span class="pill ok">อีก ${dl} วัน</span>`)}
-    const head=multi?(designNorm(j.name||'')||id):id;
+    const nick=nickOf(all);                     // ตั้งชื่อเรียกสั้นไว้ = ใช้ชื่อนั้นแทนชื่อยาวจาก Nifty
+    const head=nick||(multi?(designNorm(j.name||'')||id):id);
     const nifty=niftyUrl(id);
     return band+`<div class="jcard ${h}" data-id="${esc(id)}" data-ids="${esc(all.join(','))}" draggable="true">
       ${flagDots(all)}
@@ -1503,7 +1505,7 @@ function renderRunning(ids){
         <div style="flex:1;min-width:0">
           <div class="id">${esc(head)} <span class="due">· due ${j.due_date?thDate(j.due_date):'—'}${p.internal_due?` · <b style="color:var(--brand)">ภายใน ${thDate(p.internal_due)}</b>`:''}</span></div>
           ${multi?`<div class="jIds">${all.map(x=>`<span class="jId" data-one="${esc(x)}">${esc(x)}</span>`).join('')}</div>`
-                 :`<div class="nm">${j.name?esc(j.name):'<i style="color:var(--ink-3)">⏳ รอข้อมูลจาก raw</i>'}</div>`}
+                 :`<div class="nm" title="${esc(j.name||'')}">${nick?esc(id)+' · '+esc((j.name||'').slice(0,60)):(j.name?esc(j.name):'<i style="color:var(--ink-3)">⏳ รอข้อมูลจาก raw</i>')}</div>`}
           ${pathTags(p)}${p.need_sewing?(WOS[id]?'<span class="tag wo">📄 ใบงานแล้ว</span>':'<span class="tag wo miss">📄 ยังไม่ทำใบงาน</span>'):''}${p.pic?`<span class="tag pic">${esc(p.pic)}</span>`:''}${(()=>{const mem=memberIds(id);return mem.length?`<span class="tag grp" title="${esc(mem.join(', '))}">🔗 รวม ${mem.length+1} ไซส์</span>`:''})()}${(()=>{const k=groupKey(id),m=k?G[k]:null;if(!m||m.length<2)return'';
             const q=groupQty(m);return `<span class="tag grp" data-g="${esc(k)}" title="${esc(m.join(', '))}">🔗 ออเดอร์เดียวกัน ${m.length} งาน${q?' · '+q.toLocaleString()+' ตัว':''}</span>`})()}
           <div class="pbar"><i style="width:${pr.total?pr.done/pr.total*100:0}%"></i></div>
@@ -1740,7 +1742,8 @@ function renderTodo(){
   const card=g=>{
     const ids=g.items.map(x=>x.id);
     const fee=ids.every(isFeeJob);
-    const title=(()=>{const p=(g.key||'').split(' ‖ ');
+    const title=(()=>{const nk=nickOf(ids);if(nk)return esc(nk);
+      const p=(g.key||'').split(' ‖ ');
       const d=(p[1]&&p[1]!==ids[0]?p[1]:'')+(p[2]?` (${p[2]})`:'');
       return d?esc(d)+(p[0]&&p[0]!=='-'?' <span class="tdSo">'+esc(p[0])+'</span>':''):esc(ids[0])})();
     const dd=g.due?(()=>{const n=Math.round((D(g.due)-today())/864e5);
@@ -2008,7 +2011,7 @@ async function openDrawer(id){
       SO ${esc(j.so_no||'—')} · เซล ${esc(j.sale_name||'—')} · ลูกค้า ${esc((j.customer||'—').slice(0,40))}<br>
       เปิดงาน ${j.opened_at?thDate(j.opened_at):'—'} · <b>due ลูกค้า ${j.due_date?thDate(j.due_date):'—'}</b>${p.internal_due?` · <b style="color:var(--brand)">due ภายใน ${thDate(p.internal_due)}</b>`:''}</div>
     ${sibTable(id)}
-    <div class="fld"><label>ชื่อเรียกสั้น (โชว์ในหน้าซัพ/ลิงก์ช่าง แทนชื่อยาว)</label>
+    <div class="fld"><label>ชื่อเรียกสั้น (ใช้แทนชื่อยาวทุกที่: บอร์ด · รอลงแผน · หน้าซัพ/ช่าง · หน้าเซล — บันทึกให้ทั้งชุด)</label>
       <input id="pNick" value="${esc(p.nickname||'')}" placeholder="เช่น เสื้อโอเวอร์ไซส์ คุณเปตอง ขาว 55 ตัว"></div>
     <div class="row3">
       <div class="fld"><label>PIC</label><select id="pPic"><option value=""></option>${PICS.map(x=>`<option ${p.pic===x?'selected':''}>${x}</option>`).join('')}</select></div>
@@ -2051,8 +2054,11 @@ async function openDrawer(id){
   $('#pIDue').onchange=async e=>{await procPatch(id,{internal_due:e.target.value||null});logEvent(id,'Due ภายใน',p.internal_due||'',e.target.value)};
   $('#pNote').onchange=async e=>{await procPatch(id,{note:e.target.value||null})};
   $$('#dBody .sibId').forEach(el=>el.onclick=()=>{const t=el.dataset.go;if(t&&t!==id)openDrawer(t)});
-  $('#pNick').onchange=async e=>{await procPatch(id,{nickname:e.target.value.trim()||null});
-    logEvent(id,'ชื่อเรียกสั้น',p.nickname||'',e.target.value.trim())};
+  $('#pNick').onchange=async e=>{const v=e.target.value.trim()||null;
+    const fam=siblingIds(id).filter(x=>PROC[x]);        // ทุกไซส์ของงานเดียวกันใช้ชื่อเดียวกัน
+    await procPatchMany(fam.length?fam:[id],{nickname:v});
+    logEvent(id,'ชื่อเรียกสั้น',p.nickname||'',v||'');
+    toast(v?'ตั้งชื่อเรียกสั้นให้ '+(fam.length||1)+' เลขงานแล้ว':'ลบชื่อเรียกสั้นแล้ว')};
   const sendCmt=async()=>{const t=$('#cmtIn').value.trim();if(!t)return;
     $('#cmtIn').value='';await logEvent(id,'comment','',t);openDrawer(id);toast('บันทึกอัพเดทแล้ว ✓')};
   $('#cmtSend').onclick=sendCmt;
