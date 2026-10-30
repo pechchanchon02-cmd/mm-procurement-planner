@@ -134,8 +134,9 @@ main{max-width:1200px;margin:0 auto;padding:12px 16px 120px}
 .tdFact{display:inline-flex;align-items:center;gap:5px;background:var(--surface-2);border-radius:999px;padding:2px 10px;font-size:12px;color:var(--ink-2)}
 .tdFact.big{background:var(--brand-soft);color:var(--brand);font-weight:700;font-size:13.5px}
 .tdFact i{width:11px;height:11px;border-radius:50%;border:1px solid var(--line-2);display:inline-block}
-.ibGo{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--accent-soft);border-radius:9px;padding:8px 11px;margin:0 12px 8px;font-size:12.5px;color:var(--accent-ink)}
-.ibGo .btnG{padding:5px 11px;font-size:12px;white-space:nowrap}
+.ibGo{display:flex;flex-direction:column;align-items:stretch;gap:7px;background:var(--accent-soft);border-radius:9px;
+  padding:9px 10px;margin:0 10px 8px;font-size:12.5px;line-height:1.45;color:var(--accent-ink)}
+.ibGo .btnG{width:100%;justify-content:center;padding:6px 10px;font-size:12px;white-space:nowrap}
 @media (max-width:640px){.tdPic{width:70px;height:70px}
   .tdRow{flex-wrap:wrap}
   .tdRight{order:3;flex-basis:100%;margin-top:2px}   /* มือถือ: ป้ายวันส่งลงมาอยู่บรรทัดของมันเอง ชื่องานจะได้ความกว้างเต็ม */
@@ -257,18 +258,19 @@ select.sup{width:112px;padding:5px;border:1px solid var(--line-2);border-radius:
 .supcard .scn{font-family:var(--font-display);font-weight:700;font-size:15px;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .supcard .scc{font-size:12.5px;color:var(--ink-2)}
 .ibBox{max-width:none;margin-bottom:0}
-.ibBox h2{font-size:14px;padding:9px 12px}
-.ibForm{display:flex;gap:6px;flex-direction:column;padding:2px 12px 10px}
+.ibBox h2{font-size:13.5px;padding:8px 10px;gap:6px}
+.ibForm{display:flex;gap:6px;flex-direction:column;padding:2px 10px 10px}
 .ibForm input{padding:7px 9px;border:1px solid var(--line-2);border-radius:8px;font-size:12.5px;background:var(--surface);width:100%}
-.ibList{flex:1;min-height:0;overflow-y:auto;padding:0 12px 8px}
+.ibList{flex:1;min-height:0;overflow-y:auto;padding:0 10px 8px}
 .ibRow.done{opacity:.6}
-.ibRow{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--surface-2)}
+.ibRow{display:flex;align-items:center;gap:6px;padding:6px 0;border-top:1px solid var(--surface-2)}
 .ibRow .ibMain{flex:1;min-width:0}
 .ibRow .ibMain b{display:block;font-size:12.5px;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .ibRow .ibMain small{color:var(--ink-3);font-size:11px;display:block}
 .ibRow .pill{font-size:10.5px;padding:1px 7px}
 .ibRow .ibAct{flex:none;display:flex;gap:4px}
-.ibRow .ibAct button{padding:4px 8px;font-size:12px;border-radius:7px}
+.ibRow .ibAct button{padding:3px 6px;font-size:11.5px;border-radius:7px;opacity:.55}
+.ibRow:hover .ibAct button{opacity:1}
 .ibRow .ibMain{cursor:pointer}
 .ibRow.exp .ibMain b{-webkit-line-clamp:unset}
 .ibDet{padding:2px 0 10px;font-size:12.5px;border-bottom:1px dashed var(--line-2);margin-bottom:2px}
