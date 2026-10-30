@@ -411,6 +411,28 @@ body.supview .ssRow img{border-color:#ddd9cf}
 .saleChips .sc:hover{border-color:#0f7480}
 .saleChips .sc.on{background:#4C1F15;border-color:#4C1F15;color:#fff;font-weight:600}
 .ssSub{font-size:11.5px;color:#6b6760;margin:1px 0 2px}
+.ssRow.click{cursor:pointer;border-radius:9px;transition:background .12s}
+.ssRow.click:hover{background:#f1f0ea}
+.ssMore{font-size:11px;color:#0f7480;margin-left:7px;font-weight:500;white-space:nowrap}
+.sdOvl{position:fixed;inset:0;background:rgba(32,29,24,.5);z-index:90;display:flex;align-items:center;justify-content:center;padding:14px}
+.sdBox{background:#fffffe;color:#201d18;width:460px;max-width:100%;max-height:88vh;display:flex;flex-direction:column;
+  border-radius:14px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+.sdTop{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid #e3e2d9;font-size:15px}
+.sdTop b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-display)}
+.sdX{border:1px solid #ddd9cf;background:#f1f0ea;color:#55544b;border-radius:8px;padding:2px 9px;cursor:pointer;font-size:13px}
+.sdBody{padding:12px 14px 16px;overflow:auto}
+.sdPill{display:inline-block;color:#fff;font-size:12px;border-radius:999px;padding:3px 11px;margin-bottom:9px}
+.sdImg{width:100%;border-radius:10px;margin-bottom:9px;border:1px solid #e3e2d9}
+.sdMeta{font-size:12.5px;color:#4a463e;line-height:1.5;margin-bottom:5px}
+.sdNote{font-size:12.5px;background:#f6efe7;border-radius:8px;padding:6px 9px;margin:6px 0;color:#4C1F15}
+.sdHd{font-size:11.5px;color:#8a857a;margin:12px 0 4px;border-top:1px solid #e3e2d9;padding-top:8px}
+.sdRow{display:grid;grid-template-columns:1fr 54px 64px 22px;gap:6px;align-items:center;font-size:12.5px;padding:3px 0}
+.sdRow a{color:#0f7480;text-decoration:none}
+.sdStep{display:grid;grid-template-columns:16px 1fr auto;gap:6px;align-items:center;font-size:12.5px;padding:3px 0;color:#4a463e}
+.sdStep.ok{color:#2e7d4f}
+.sdDot{text-align:center}
+.sdWhen{font-size:11.5px;color:#6b6760}
+.sdWhen.late{color:#b3261e;font-weight:600}
 
 /* --- ตารางเลขงานพี่น้องในใบงาน (ไล่ไซส์ + จำนวน + ลิงก์ Nifty รายเลข) --- */
 .sibBox{border:1px solid var(--line);border-radius:9px;padding:7px 8px;margin:8px 0}
@@ -1898,9 +1920,9 @@ function drawSale(){
       when=p.hold_note?'📝 '+esc(p.hold_note):'ติดอยู่ รอเคลียร์';}
     else{step=n?`<span class="ssStep">${esc(n.label)}</span>`:'<span class="ssStep" style="background:#2e7d4f">ครบทุกขั้นแล้ว</span>';
       when=n?(n.plan_date?((dl<0?'⚠ เลยแผน '+(-dl)+' วัน · ':dl===0?'วันนี้ · ':'อีก '+dl+' วัน · ')+'แผน '+thFull(n.plan_date)):'ลงแผนแล้ว ยังไม่ใส่วันที่'):'รอส่ง';}
-    return `<div class="ssRow">${u?`<img src="${esc(u)}" loading="lazy">`:'<span class="ph2">🧵</span>'}
+    return `<div class="ssRow click" data-open="${esc(all.join(','))}" data-kind="${kind}">${u?`<img src="${esc(u)}" loading="lazy">`:'<span class="ph2">🧵</span>'}
       <span class="ssMid">
-        <div class="ssNick"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${dotC};margin-right:5px"></span>${esc(p.nickname||designNorm(jobName(id))||id)}</div>
+        <div class="ssNick"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${dotC};margin-right:5px"></span>${esc(p.nickname||designNorm(jobName(id))||id)}<span class="ssMore">ดูรายละเอียด ›</span></div>
         <div class="ssSub">${esc(multi?all.join(' · '):id)}${qty?' · '+qty.toLocaleString()+' ตัว':''}${kind==='run'?` · ${pr.done}/${pr.total} ขั้น`:''} · ส่งลูกค้า ${j.due_date?thDate(j.due_date):'—'}${(!SALEOWNER&&j.sale_name)?' · เซล '+esc(j.sale_name):''}</div>
         <div class="ssLine">${step}<span class="ssDate ${(kind==='run'&&dl!==null&&dl<0)?'lateD':''}">${when}</span></div>
       </span></div>`};
@@ -1918,6 +1940,52 @@ function drawSale(){
     ${!queue.length&&!heldIds.length&&!planned.length?'<div style="color:#6b6760;padding:24px">ตอนนี้ไม่มีงานค้างในระบบครับ 🎉</div>':''}
     <div style="font-size:12px;color:#6b6760;margin-top:14px">จบแล้ว ${doneN} งาน</div>`;
   $$('#woPrint .saleChips .sc').forEach(b=>b.onclick=()=>{SALEFILT=b.dataset.s;drawSale()});
+  $$('#woPrint .ssRow.click').forEach(r=>r.onclick=()=>saleDetail(r.dataset.open.split(','),r.dataset.kind));
+}
+/* หน้าต่างรายละเอียดของหน้าเซล — ดูอย่างเดียว ไม่มีช่องกรอก ไม่มีปุ่มบันทึกใดๆ */
+function saleDetail(ids,kind){
+  const id=ids[0],j=JOBS[id]||{},p=PROC[id]||{};
+  const rows=[...new Set(ids.concat(...ids.map(memberIds)))]
+    .map(x=>({id:x,sz:sizeOf(x),q:parseQty(x)||0}))
+    .sort((a,b)=>{const i=SZORD.indexOf(a.sz),k=SZORD.indexOf(b.sz);
+      if(i!==k)return (i<0?99:i)-(k<0?99:k);return a.id<b.id?-1:1});
+  const tot=rows.reduce((t,r)=>t+r.q,0);
+  const ms=ids.map(x=>msOf(x)).sort((a,b)=>b.length-a.length)[0]||[];
+  const im=imgOf(id);
+  const head=kind==='queue'?'<span class="sdPill" style="background:#b3261e">🔴 ยังไม่ลงแผน</span>'
+    :kind==='hold'?'<span class="sdPill" style="background:#55544b">⏸ พักงาน</span>'
+    :'<span class="sdPill" style="background:#2e7d4f">🟢 ลงแผนแล้ว</span>';
+  const steps=ms.length?ms.map(m=>{
+      const late=!m.actual_date&&m.plan_date&&D(m.plan_date)<today();
+      return `<div class="sdStep ${m.actual_date?'ok':''}">
+        <span class="sdDot">${m.actual_date?'✔':'•'}</span>
+        <span class="sdLab">${esc(m.label)}${m.supplier?` <i style="color:#8a857a">@${esc(m.supplier)}</i>`:''}</span>
+        <span class="sdWhen ${late?'late':''}">${m.actual_date?'เสร็จ '+thDate(m.actual_date):(m.plan_date?'แผน '+thDate(m.plan_date):'ยังไม่กำหนด')}</span></div>`}).join('')
+    :'<div style="color:#6b6760;font-size:12.5px;padding:6px 0">จัดซื้อยังไม่ได้วางแผนงานนี้ — ยังไม่มีขั้นตอน/วันที่</div>';
+  const d=document.createElement('div');d.className='sdOvl';
+  d.innerHTML=`<div class="sdBox">
+    <div class="sdTop"><b>${esc(p.nickname||designNorm(jobName(id))||id)}</b>
+      <button class="sdX" title="ปิด">✕</button></div>
+    <div class="sdBody">
+      ${head}
+      ${im?`<img class="sdImg" src="${esc(im)}">`:''}
+      <div class="sdMeta">${esc((j.name||'').slice(0,160))}</div>
+      <div class="sdMeta">ออเดอร์ ${esc(j.so_no||'—')} · ลูกค้า ${esc((j.customer||'—').slice(0,40))} · <b>ส่งลูกค้า ${j.due_date?thFull(j.due_date):'—'}</b></div>
+      ${p.hold_note?`<div class="sdNote">📝 ${esc(p.hold_note)}</div>`:''}
+      <div class="sdHd">เลขงานในชุดนี้ ${rows.length} เลข${tot?` · รวม <b>${tot.toLocaleString()}</b> ตัว`:''}</div>
+      ${rows.map(r=>{const u=niftyUrl(r.id);
+        return `<div class="sdRow"><span>${esc(r.id)}</span><span>${r.sz?esc(r.sz):'—'}</span>
+          <span>${r.q?r.q.toLocaleString()+' ตัว':''}</span>
+          ${u?`<a href="${u}" target="_blank" rel="noopener" title="เปิดใน Nifty">↗</a>`:'<span></span>'}</div>`}).join('')}
+      <div class="sdHd">แผนการผลิต</div>
+      ${steps}
+      <div style="font-size:11.5px;color:#8a857a;margin-top:10px">หน้านี้ดูอย่างเดียว — ถ้าต้องแก้แผนหรือวันส่ง แจ้งทีมจัดซื้อ</div>
+    </div></div>`;
+  document.body.appendChild(d);
+  const close=()=>d.remove();
+  d.querySelector('.sdX').onclick=close;
+  d.onclick=e=>{if(e.target===d)close()};
+  document.addEventListener('keydown',function esc2(e){if(e.key==='Escape'){close();document.removeEventListener('keydown',esc2)}});
 }
 
 /* ============ drawer ============ */
