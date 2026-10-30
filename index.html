@@ -63,7 +63,7 @@ button.btn:hover,button.btn2:hover{border-color:var(--accent);color:var(--accent
 #bar input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
 main{max-width:1200px;margin:0 auto;padding:12px 16px 120px}
 #topRow{margin-bottom:12px}
-#boardRow{display:grid;grid-template-columns:330px minmax(0,1fr) 290px;gap:14px;align-items:start}
+#boardRow{display:grid;grid-template-columns:228px minmax(0,1fr) 212px;gap:11px;align-items:start}
 #kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;align-content:start}
 #ibWrap{position:sticky;top:12px;height:calc(100vh - 160px);min-height:320px}
 #ibWrap .ibBox{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden}
@@ -405,6 +405,18 @@ body.supview .ssRow a.btnwo{background:#0f7480;color:#fff}
 body.supview .ph2{background:#eceade}
 body.supview .ssRow img{border-color:#ddd9cf}
 
+/* --- ตารางเลขงานพี่น้องในใบงาน (ไล่ไซส์ + จำนวน + ลิงก์ Nifty รายเลข) --- */
+.sibBox{border:1px solid var(--line);border-radius:9px;padding:7px 8px;margin:8px 0}
+.sibHd{font-size:11.5px;color:var(--ink-3);margin-bottom:4px}
+.sibRow{display:grid;grid-template-columns:minmax(0,1fr) auto 62px 26px;align-items:center;gap:6px;
+  padding:3px 0;border-top:1px solid var(--line);font-size:12.5px}
+.sibRow:first-of-type{border-top:0}
+.sibRow.me{font-weight:700}
+.sibId{cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px}
+.sibSz{font-size:11.5px;color:var(--ink-2)}
+.sibQ{font-size:11.5px;color:var(--ink-2);text-align:right}
+.sibRow .btn2{padding:0 5px;font-size:11px;line-height:1.7}
+
 /* --- คอลัมน์ 4: พักงาน (req ไม่จบ / ไทม์ไลน์ไม่เคลียร์) --- */
 #holdWrap{position:sticky;top:12px;max-height:calc(100vh - 160px);overflow:auto;
   background:var(--surface-2);border:1px dashed var(--line-2);border-radius:12px;padding:10px}
@@ -423,14 +435,20 @@ body.supview .ssRow img{border-color:#ddd9cf}
 
 /* --- ธงสถานะแผน กรอกมือจากมุมการ์ด: เขียว ตามแผน / เหลือง เสี่ยง / แดง หลุดแผน --- */
 .jcard{position:relative}
-.flg{position:absolute;top:7px;right:8px;display:flex;gap:3px;z-index:3}
-.hcard .flg{top:6px;right:6px;flex-direction:column}
-.flg i{width:13px;height:13px;border-radius:50%;display:block;cursor:pointer;opacity:.26;border:1px solid rgba(0,0,0,.2)}
-.flg i:hover{opacity:.8}
-.flg i.on{opacity:1;box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px currentColor}
-.flg i[data-f="g"]{background:#2e7d4f;color:#2e7d4f}
-.flg i[data-f="y"]{background:#d8a200;color:#d8a200}
-.flg i[data-f="r"]{background:#b3261e;color:#b3261e}
+.flg{position:absolute;top:6px;right:7px;z-index:4}
+.hcard .flg{top:5px;right:5px}
+.flgB{display:flex;align-items:center;gap:2px;padding:1px 5px;font-size:10px;line-height:1.5;
+  border:1px solid var(--line-2);border-radius:7px;background:var(--surface-2);color:var(--ink-3);cursor:pointer}
+.flgB:hover{border-color:var(--ink-3)}
+.flgB .cv{font-size:8px;opacity:.65}
+.flgB.g{color:#2e7d4f;border-color:#2e7d4f}
+.flgB.y{color:#d8a200;border-color:#d8a200}
+.flgB.r{color:#b3261e;border-color:#b3261e}
+.flgM{display:none;position:absolute;right:0;top:21px;min-width:124px;padding:4px;
+  background:var(--surface);border:1px solid var(--line-2);border-radius:9px;box-shadow:0 8px 22px rgba(0,0,0,.28)}
+.flg.open .flgM{display:block}
+.flgM b{display:block;font-weight:500;font-size:11.5px;padding:5px 8px;border-radius:6px;white-space:nowrap;cursor:pointer}
+.flgM b:hover{background:var(--surface-2)}
 @media (max-width:1300px){#boardRow{grid-template-columns:330px minmax(0,1fr)}
   #holdWrap{grid-column:1 / -1;position:static;max-height:none}}
 .ssRow{display:flex;align-items:center;gap:16px;padding:14px 4px;border-top:1px solid var(--line)}
@@ -728,6 +746,39 @@ function todoInfo(ids){
   const PN={basic:'ทรงปกติ',oversize:'โอเวอร์ไซส์',boxy:'บ็อกซี่',babytee:'เบบี้ที'};
   return {qty,pat,patName:PN[pat]||pat,col,unknown:!parseColor(nm)};
 }
+const SZORD=['XS','S','M','L','XL','2XL','XXL','3XL','4XL','5XL','6XL'];
+function sizeOf(id){const nm=jobName(id);
+  let m=nm.match(new RegExp('\\[[A-Za-z0-9]+-('+SZRE+')\\]','i'));        // [2508GMT100-XXL]
+  if(!m)m=nm.match(new RegExp('(?:ไซส์|ไซซ์|size)\\s*('+SZRE+')\\b','i'));  // "ไซส์ L"
+  if(!m)m=nm.match(new RegExp('\\s('+SZRE+')(?=\\s|$)'));                 // "... XL" ท้ายชื่อ
+  return m?m[1].toUpperCase():''}
+function siblingIds(id){        // เลขงานพี่น้อง = ออเดอร์+แบบเดียวกัน รวมไซส์ที่ถูกมัดไว้ในงานอื่นด้วย
+  const key=designKey(id),out=new Set([id,...memberIds(id)]);
+  Object.values(PROC).forEach(p=>{if(p.tracked===false)return;
+    if(designKey(p.job_id)!==key)return;
+    out.add(p.job_id);memberIds(p.job_id).forEach(x=>out.add(x))});
+  return [...out]}
+function sizeSplit(id){        // ชื่องานแบบ "2508GMT100 - MWH = 140 ... LWH = 123" = หลายไซส์ในเลขเดียว
+  const re=new RegExp('\b('+SZRE+')[A-Z]{0,3}\s*=\s*([0-9][0-9,]*)','gi');
+  const nm=jobName(id).replace(/,/g,''),out=[];let m;
+  while((m=re.exec(nm))!==null)out.push({sz:m[1].toUpperCase(),q:+m[2]});
+  return out}
+function sibRows(id){
+  return siblingIds(id).map(x=>({id:x,sz:sizeOf(x),q:parseQty(x)||0}))
+    .sort((a,b)=>{const i=SZORD.indexOf(a.sz),j=SZORD.indexOf(b.sz);
+      if(i!==j)return (i<0?99:i)-(j<0?99:j);
+      return a.id<b.id?-1:1})}
+function sibTable(id){
+  const rows=sibRows(id);
+  const tot=rows.reduce((t,r)=>t+r.q,0);
+  return `<div class="sibBox"><div class="sibHd">เลขงานในชุดเดียวกัน ${rows.length} เลข${tot?` · รวม <b>${tot.toLocaleString()}</b> ตัว`:''}</div>
+    ${rows.map(r=>{const u=niftyUrl(r.id);
+      return `<div class="sibRow ${r.id===id?'me':''}">
+        <span class="sibId" data-go="${esc(r.id)}">${esc(r.id)}</span>
+        <span class="sibSz">${r.sz?esc(r.sz):(sizeSplit(r.id).length?esc(sizeSplit(r.id).map(x=>x.sz+' '+x.q).join(' · ')):'<i style="color:var(--mut)">—</i>')}</span>
+        <span class="sibQ">${r.q?r.q.toLocaleString()+' ตัว':''}</span>
+        ${u?`<a class="btn2 sibGo" href="${u}" target="_blank" rel="noopener" title="เปิด ${esc(r.id)} ใน Nifty">↗</a>`:'<span></span>'}</div>`}).join('')}
+    </div>`}
 function memberIds(id){const m=(PROC[id]||{}).member_ids||'';return m?m.split(',').filter(Boolean):[]}
 function buildGroups(ids){const g={};ids.forEach(id=>{const k=groupKey(id);if(k)(g[k]=g[k]||[]).push(id)});return g}
 function groupQty(ids){let t=0;for(const id of ids){const q=guessQty((JOBS[id]||{}).name);if(!q)return null;t+=q}return t}
@@ -756,12 +807,20 @@ function effFlag(ids){const f=flagOf(ids);if(f)return f;            // ไม่
   const a=[].concat(ids);
   const h=a.every(jobDone)?'good':a.map(x=>jobDone(x)?'good':health(x)).sort((x,y)=>HRANK[x]-HRANK[y])[0];
   return ({good:'g',warn:'y',late:'r'})[h]||'g'}
-function flagDots(ids){const a=[].concat(ids),cur=flagOf(a);
-  return '<span class="flg" data-ids="'+esc(a.join(','))+'">'+['g','y','r'].map(f=>
-    `<i data-f="${f}" class="${cur===f?'on':''}" title="${FLAGLBL[f]}${cur===f?' — กดซ้ำเพื่อเอาธงออก':''}"></i>`).join('')+'</span>'}
-function wireFlags(scope){$$(scope+' .flg i').forEach(el=>el.onclick=e=>{e.stopPropagation();
-  const ids=el.parentNode.dataset.ids.split(',').filter(Boolean);
-  const f=el.dataset.f;setFlag(ids,flagOf(ids)===f?null:f)})}
+const FLAGICON={g:'🟢',y:'🟡',r:'🔴'};
+function flagDots(ids){const a=[].concat(ids),cur=flagOf(a);     // ปุ่ม dropdown มุมขวาบนของการ์ด
+  return `<span class="flg" data-ids="${esc(a.join(','))}">
+    <button class="flgB ${cur||''}" title="สถานะแผน: ${cur?FLAGLBL[cur]:'อัตโนมัติจากวันแผน'}">${cur?FLAGICON[cur]:'⚪'}<span class="cv">▾</span></button>
+    <span class="flgM">${['g','y','r'].map(f=>`<b data-f="${f}">${FLAGICON[f]} ${FLAGLBL[f]}</b>`).join('')}<b data-f="">↺ อัตโนมัติ</b></span></span>`}
+function wireFlags(scope){
+  $$(scope+' .flg .flgB').forEach(b=>b.onclick=e=>{e.stopPropagation();
+    const box=b.parentNode,was=box.classList.contains('open');
+    $$('.flg.open').forEach(x=>x.classList.remove('open'));
+    if(!was)box.classList.add('open')});
+  $$(scope+' .flgM b').forEach(el=>el.onclick=e=>{e.stopPropagation();
+    const box=el.closest('.flg');box.classList.remove('open');
+    setFlag(box.dataset.ids.split(',').filter(Boolean),el.dataset.f||null)})}
+document.addEventListener('click',()=>$$('.flg.open').forEach(x=>x.classList.remove('open')));
 async function procPatchMany(ids,patch){            // อัพเดตหลายเลขทีเดียว ไม่ให้จอกระพริบทีละงาน
   if(!DEMO){const rows=ids.map(id=>({job_id:id,...patch,updated_at:new Date().toISOString()}));
     const {error}=await sb.from('procurement').upsert(rows);
@@ -1846,6 +1905,7 @@ async function openDrawer(id){
       ${pathTags(p)} · Nifty: ${esc(j.nifty_status||'—')}<br>
       SO ${esc(j.so_no||'—')} · เซล ${esc(j.sale_name||'—')} · ลูกค้า ${esc((j.customer||'—').slice(0,40))}<br>
       เปิดงาน ${j.opened_at?thDate(j.opened_at):'—'} · <b>due ลูกค้า ${j.due_date?thDate(j.due_date):'—'}</b>${p.internal_due?` · <b style="color:var(--brand)">due ภายใน ${thDate(p.internal_due)}</b>`:''}</div>
+    ${sibTable(id)}
     <div class="fld"><label>ชื่อเรียกสั้น (โชว์ในหน้าซัพ/ลิงก์ช่าง แทนชื่อยาว)</label>
       <input id="pNick" value="${esc(p.nickname||'')}" placeholder="เช่น เสื้อโอเวอร์ไซส์ คุณเปตอง ขาว 55 ตัว"></div>
     <div class="row3">
@@ -1888,6 +1948,7 @@ async function openDrawer(id){
   $('#pPic').onchange=async e=>{await procPatch(id,{pic:e.target.value||null});logEvent(id,'PIC','',e.target.value)};
   $('#pIDue').onchange=async e=>{await procPatch(id,{internal_due:e.target.value||null});logEvent(id,'Due ภายใน',p.internal_due||'',e.target.value)};
   $('#pNote').onchange=async e=>{await procPatch(id,{note:e.target.value||null})};
+  $$('#dBody .sibId').forEach(el=>el.onclick=()=>{const t=el.dataset.go;if(t&&t!==id)openDrawer(t)});
   $('#pNick').onchange=async e=>{await procPatch(id,{nickname:e.target.value.trim()||null});
     logEvent(id,'ชื่อเรียกสั้น',p.nickname||'',e.target.value.trim())};
   const sendCmt=async()=>{const t=$('#cmtIn').value.trim();if(!t)return;
