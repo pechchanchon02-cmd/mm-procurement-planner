@@ -441,6 +441,19 @@ body.saleview .sdStep.ok{color:#8fdc8a}
 body.saleview .sdWhen{color:#8f8e84}
 body.saleview .sdWhen.late{color:#f19a9a}
 .saleSub{color:#6b6760}
+
+/* --- KPI รายสัปดาห์ --- */
+.wkGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:10px;margin-bottom:14px}
+.wkCard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 13px}
+.wkCard .k{font-size:12px;color:var(--ink-3);display:flex;align-items:center;gap:5px}
+.wkCard .v{font-family:var(--font-display);font-size:25px;font-weight:700;line-height:1.25;margin-top:2px}
+.wkCard .s{font-size:11.5px;color:var(--ink-3);line-height:1.4}
+.wkCard.good .v{color:var(--good-ink)}.wkCard.warn .v{color:var(--warn-ink)}.wkCard.crit .v{color:var(--crit-ink)}
+.wkSec{font-family:var(--font-display);font-size:14px;margin:14px 0 6px}
+.wkRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;
+  padding:7px 0;border-top:1px solid var(--line);font-size:13px}
+.wkRow small{display:block;font-size:11.5px;color:var(--ink-3)}
+.wkRow .pill{font-size:11px}
 body.saleview .saleSub{color:#8f8e84}
 .ssRow.click{cursor:pointer;border-radius:9px;transition:background .12s}
 .ssRow.click:hover{background:#f1f0ea}
@@ -552,6 +565,7 @@ body.saleview .saleSub{color:#8f8e84}
     <button data-v="sup">ซัพพลายเออร์ <span class="badge zero" id="nSup">0</span></button>
     <button data-v="todo">รอลงแผน <span class="badge zero" id="nTodo">0</span></button>
     <button data-v="kpi">KPI</button>
+    <button data-v="wk">KPI สัปดาห์</button>
   </nav>
   <span class="sp"></span>
   <button class="btnG" id="bNew">＋ เปิดงาน</button>
@@ -584,6 +598,7 @@ body.saleview .saleSub{color:#8f8e84}
   <div id="ganttWrap"></div>
   <div id="supWrap"></div>
   <div id="kpiWrap"></div>
+  <div id="wkWrap"></div>
   <div id="todoWrap"></div>
 </main>
 
@@ -1471,12 +1486,13 @@ function render(){
   $('#holdWrap').style.display=view==='running'?'':'none';
   $('#boardRow').style.gridTemplateColumns=view==='running'?'':'1fr';
   if(view==='running'){renderInbox();renderHold(holdIds)}
-  ['running','calWrap','ganttWrap','supWrap','kpiWrap','todoWrap'].forEach(x=>$('#'+x).style.display='none');
+  ['running','calWrap','ganttWrap','supWrap','kpiWrap','todoWrap','wkWrap'].forEach(x=>$('#'+x).style.display='none');
   if(view==='running'){$('#running').style.display='grid';renderRunning(ids)}
   if(view==='cal'){$('#calWrap').style.display='block';renderCal(ids)}
   if(view==='gantt'){$('#ganttWrap').style.display='block';renderGantt(ids)}
   if(view==='sup'){$('#supWrap').style.display='block';renderSup(ids)}
   if(view==='kpi'){$('#kpiWrap').style.display='block';renderKPI()}
+  if(view==='wk'){$('#wkWrap').style.display='block';renderWeek()}
   if(view==='todo'){$('#todoWrap').style.display='block';renderTodo()}
 }
 function fillSel(q,arr,cur){const el=$(q);const first=el.options[0].outerHTML;
@@ -1881,6 +1897,56 @@ function renderSupShare(name){
     ${nowI.length?`<div class="supsec" style="padding-left:0">งานที่อยู่กับคุณตอนนี้ (${nowI.length})</div>${nowI.map(row).join('')}`:''}
     ${inI.length?`<div class="supsec" style="padding-left:0">🔜 งานที่กำลังจะเข้ามา (${inI.length})</div>${inI.map(row).join('')}`:''}
     ${!nowI.length&&!inI.length?'<div style="color:var(--mut);padding:24px">ตอนนี้ไม่มีงานค้างครับ 🎉</div>':''}`;
+}
+
+/* ============ KPI รายสัปดาห์ (ตัวเลขคิดที่บอท mm-plan-bot แล้วส่ง JSON มา) ============ */
+const KPI_API='https://mm-plan-bot.pechchanchon02.workers.dev/kpi';
+let wkOff=0,wkData=null;
+async function renderWeek(){
+  const w=$('#wkWrap');
+  w.innerHTML='<div style="color:var(--mut);padding:24px;text-align:center">กำลังคิดตัวเลข…</div>';
+  let k;
+  try{k=await (await fetch(`${KPI_API}?w=${wkOff}`)).json()}
+  catch(e){w.innerHTML=`<div style="color:var(--crit-ink);padding:24px;text-align:center">ดึง KPI ไม่ได้: ${esc(e.message)}</div>`;return}
+  wkData=k;
+  const baht=n=>'฿'+Math.round(n||0).toLocaleString();
+  const cls=(v,good)=>v===null?'':v>=good?'good':v>=good-15?'warn':'crit';
+  const zero=n=>n?'crit':'good';
+  const card=(k2,v,s2,c)=>`<div class="wkCard ${c||''}"><div class="k">${k2}</div><div class="v">${v}</div><div class="s">${s2||''}</div></div>`;
+  const pct=v=>v===null?'—':v+'%';
+  const arrow=(a,b)=>(a===null||b===null||a===b)?'':a>b?` ↑ จาก ${b}`:` ↓ จาก ${b}`;
+  const rowsOf=(title,list,fmt)=>list.length?`<div class="wkSec">${title}</div>`+list.map(fmt).join(''):'';
+  w.innerHTML=`
+    <div class="supbox" style="padding:12px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <h2 style="padding:0;background:none;font-size:16px">📊 KPI ทีมจัดซื้อ · ${esc(k.week.label)}</h2>
+      <button class="btn2" id="wkPrev">‹ สัปดาห์ก่อน</button>
+      <button class="btn2" id="wkNext" ${wkOff>=0?'disabled style="opacity:.4"':''}>สัปดาห์ถัดไป ›</button>
+      <span style="flex:1"></span>
+      <span style="font-size:11.5px;color:var(--ink-3)">ตัวเลขดึงจากบอร์ด+ชีต SO อัตโนมัติ ไม่ได้กรอกมือ</span>
+    </div>
+    <div class="wkGrid">
+      ${card('ส่งทันแผนแรก',pct(k.onTime.pct),`${k.onTime.ok}/${k.onTime.n} งานที่จบสัปดาห์นี้${arrow(k.onTime.pct,k.onTimePrev.pct)}`,cls(k.onTime.pct,80))}
+      ${card('ลงแผนใน 24 ชม.',pct(k.plan24.pct),`${k.plan24.ok}/${k.plan24.judged} เลขที่เซลส่งเข้ามา`,cls(k.plan24.pct,100))}
+      ${card('คิวค้างเกิน 2 วัน',k.queueOld.length,`คิวที่ยังไม่ลงแผนตอนนี้ ${k.queueOpen} รายการ`,zero(k.queueOld.length))}
+      ${card('งานหลุดมือ',k.lost.length,'เคลียร์ออกจากคิวแล้วแต่ไม่มีแผน',zero(k.lost.length))}
+      ${card('พักงานค้างเกิน 7 วัน',k.holdOld.length,'ต้องตามเซล/ลูกค้าให้เคลียร์',zero(k.holdOld.length))}
+      ${card('ยอดที่ส่งจบได้',baht(k.money.shipped),`${k.qty.toLocaleString()} ตัว · สัปดาห์ก่อน ${baht(k.moneyPrev.shipped)}`,'good')}
+      ${card('ยอดที่ครบกำหนดสัปดาห์นี้',pct(k.money.pct),`ส่งทัน ${baht(k.money.dueShipped)} จาก ${baht(k.money.dueVal)}`,cls(k.money.pct,90))}
+      ${card('ยอดค้างเลยกำหนด',baht(k.overdue.val),`${k.overdue.n} ออเดอร์ที่ยังไม่ส่ง`,k.overdue.val?'crit':'good')}
+      ${card(`ยอดงานเสื้อ ${esc(k.owner)} — ส่งจบ`,baht(k.mine.shipped),`เดือนนี้ ${baht(k.mine.monthShipped)} · สัปดาห์ก่อน ${baht(k.mine.shippedPrev)}`,'good')}
+      ${card('งานเสื้อที่รับเข้ามาใหม่',baht(k.mine.booked),`เดือนนี้ ${baht(k.mine.monthBooked)}`,'')}
+    </div>
+    <div class="supbox" style="padding:12px 14px">
+      ${rowsOf('ส่งช้ากว่าแผนแรก',k.onTime.late,x=>`<div class="wkRow" data-id="${esc(x.id)}" style="cursor:pointer"><span><b>${esc(x.title)}</b><small>${esc(x.id)}${x.pic?' · '+esc(x.pic):''}</small></span><span class="pill late">ช้า ${x.late} วัน</span></div>`)}
+      ${rowsOf('ยอดค้างก้อนใหญ่ (เลยกำหนดแล้ว)',k.overdue.list,x=>`<div class="wkRow"><span><b>${esc(x.title)}</b><small>${esc(x.so)} · เลย ${x.days} วัน</small></span><span class="pill warn">${baht(x.v)}</span></div>`)}
+      ${rowsOf('คิวค้างนาน',k.queueOld,x=>`<div class="wkRow" data-id="${esc(x.id)}" style="cursor:pointer"><span><b>${esc(x.title)}</b><small>${esc(x.id)}</small></span><span class="pill warn">${x.days} วัน</span></div>`)}
+      ${rowsOf('พักงานค้างนาน',k.holdOld,x=>`<div class="wkRow" data-id="${esc(x.id)}" style="cursor:pointer"><span><b>${esc(x.title)}</b><small>${esc(x.id)}${x.note?' · '+esc(x.note):''}</small></span><span class="pill muted">${x.days} วัน</span></div>`)}
+      ${k.lost.length?`<div class="wkSec">งานหลุดมือ — เคลียร์คิวแล้วแต่ไม่มีแผน</div><div style="font-size:12.5px;color:var(--ink-2);line-height:1.6">${k.lost.map(x=>esc(x.id)+' ('+esc(x.by)+')').join(', ')}</div>`:''}
+      ${!k.onTime.late.length&&!k.overdue.list.length&&!k.queueOld.length&&!k.holdOld.length&&!k.lost.length?'<div style="color:var(--mut);padding:18px;text-align:center">สัปดาห์นี้ไม่มีอะไรต้องอธิบาย 🎉</div>':''}
+    </div>`;
+  $('#wkPrev').onclick=()=>{wkOff--;renderWeek()};
+  $('#wkNext').onclick=()=>{if(wkOff<0){wkOff++;renderWeek()}};
+  $$('#wkWrap .wkRow[data-id]').forEach(r=>r.onclick=()=>openDrawer(r.dataset.id));
 }
 
 /* ============ ลิงก์เซล: ดูแผนงานของตัวเอง (read-only คนละลิงก์กับบอร์ดจัดซื้อ) ============ */
