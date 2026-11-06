@@ -795,6 +795,8 @@ function designNorm(nm){      // ตัดไซส์/จำนวน/รหั
   return x.replace(/[\s/\-–·,]+/g,' ').trim().slice(0,70);
 }
 function designKey(id){       // คีย์จัดกลุ่มจริง = ออเดอร์ + แบบ + สี (ไซส์รวมกันได้)
+  const grp=(PROC[id]||{}).grp;
+  if(grp)return 'ชุด ‖ '+grp;   // ทีมกำหนดชุดเอง (ออเดอร์เดียวกันหลายสี ชื่อ Nifty เหมือนกันเป๊ะ)
   const j=JOBS[id]||(RAWIDX&&RAWIDX[id])||{},nm=j.name||'';
   const so=groupKey(id); const d=designNorm(nm);
   if(!so&&!d)return 'เดี่ยว:'+id;
@@ -1407,6 +1409,10 @@ function wizStep3(j,flags){
       if(error)throw error;
       logEvent(j.job_id,'เปิดงาน','',`${rows.length} ขั้น · ${flags.need_fabric?'ผ้าใหม่':''} ${flags.need_sewing?'เย็บใหม่':''} สกรีน${flags.screen_where}`);
       const sib=(window.__planGroup||[]).filter(x=>x&&x!==j.job_id);window.__planGroup=null;
+      const grpTag=window.__planGrp||'';window.__planGrp='';
+      if(grpTag){const fam=[j.job_id,...sib];
+        await sb.from('procurement').upsert(fam.map(x=>({job_id:x,grp:grpTag})));
+        fam.forEach(x=>{PROC[x]={...(PROC[x]||{job_id:x}),grp:grpTag}})}
       if(sib.length){        // รวมไซส์เป็นงานเดียว เก็บเลขงานน้องไว้ในช่อง member_ids (ค้นหาด้วยเลขไหนก็เจอ)
         await sb.from('procurement').upsert({job_id:j.job_id,need_fabric:flags.need_fabric,
           need_sewing:flags.need_sewing,screen_where:flags.screen_where,pic:flags.pic,tracked:true,
@@ -1576,7 +1582,7 @@ function renderRunning(ids){
         <span class="jGo">${nifty?`<a class="btn2" href="${nifty}" target="_blank" rel="noopener" title="เปิดใน Nifty">↗ Nifty</a>`:''}${WOS[id]?`<button class="btn2 jWo" data-one="${esc(id)}">📄 ใบงาน</button>`:''}${pr.total?'':`<button class="btnG jPlan" data-one="${esc(id)}">＋ ลงแผน</button>`}<button class="btn2 jHold" data-ids="${esc(all.join(','))}" title="req ไม่จบ / ไทม์ไลน์ไม่เคลียร์ — พักไว้ก่อน ไม่ปนกับงานวิ่ง">⏸ พัก</button></span>
       </div></div>`}).join('')||'<div style="color:var(--mut);padding:30px;text-align:center">ยังไม่มีงานบนบอร์ด — กด ＋ เปิดงาน</div>';
   $$('#running .jId,#running .jWo').forEach(t=>t.onclick=e=>{e.stopPropagation();openDrawer(t.dataset.one)});
-  $$('#running .jPlan').forEach(b=>b.onclick=e=>{e.stopPropagation();window.__planGroup=null;wizStep1(b.dataset.one)});
+  $$('#running .jPlan').forEach(b=>b.onclick=e=>{e.stopPropagation();window.__planGroup=null;window.__planGrp='';wizStep1(b.dataset.one)});
   $$('#running .jGo a').forEach(a=>a.onclick=e=>e.stopPropagation());
   $$('#running .tag.grp').forEach(t=>t.onclick=e=>{e.stopPropagation();
     filt.grp=filt.grp===t.dataset.g?'':t.dataset.g;render()});
@@ -1758,12 +1764,21 @@ function todoList(){
   });
   return out;
 }
+function grpTagOf(txt){const m=String(txt||'').match(/#ชุด[:：]?\s*([^\s|·]+)/);return m?m[1]:''}
+function grpOfCard(g){        // ชื่อชุดที่จะติดให้งาน ตอนกดลงแผนจากการ์ดนี้
+  const t=String(g.txt||'');
+  return grpTagOf(t)||(t.match(/(BC\d{1,2}[A-Z]{2,3})/i)||[])[1]||(t.match(/สี[ก-๙A-Za-z]+/)||[])[0]||''}
 function todoGroups(){
   const g={},L=todoList();
   L.forEach(it=>{
-    // ชื่องานใน Nifty บางทีเขียนแค่ "สีพิเศษ" → ใช้รหัสสีผ้าที่เซลพิมพ์มา (BC4TD, BC8DF) แยกชุดให้ถูก
-    const cc=(String(it.txt||'').match(/(BC\d{1,2}[A-Z]{2,3})/i)||[])[1]||'';
-    const k=designKey(it.id)+(cc?' ‖ '+cc.toUpperCase():'');
+    // ออเดอร์เดียวกันหลายสี ชื่อใน Nifty เหมือนกันเป๊ะ → แยกชุดจากสิ่งที่พิมพ์มาในคิว
+    //   1) "#ชุด:xxx" ที่ระบุมาเอง ชนะทุกอย่าง · 2) รหัสสีผ้า BC26LN · 3) คำว่า "สีดำ/สีขาว/…"
+    const t=String(it.txt||'');
+    const tag=(t.match(/#ชุด[:：]?\s*([^\s|·]+)/)||[])[1]||'';
+    const cc=(t.match(/(BC\d{1,2}[A-Z]{2,3})/i)||[])[1]||'';
+    const col=(t.match(/สี[ก-๙A-Za-z]+/)||[])[0]||'';
+    const k=tag?('ชุด ‖ '+tag)
+      :designKey(it.id)+(cc?' ‖ '+cc.toUpperCase():col?' ‖ '+col:'');
     (g[k]=g[k]||{key:k,items:[],due:null,txt:''}).items.push(it);
     const j=JOBS[it.id]||{};
     if(j.due_date&&(!g[k].due||j.due_date<g[k].due))g[k].due=j.due_date;
@@ -1811,7 +1826,7 @@ function renderTodo(){
     const dd=g.due?(()=>{const n=Math.round((D(g.due)-today())/864e5);
       return `<span class="pill ${n<0?'late':n<=3?'warn':'ok'}">ส่ง ${thDate(g.due)} · ${n<0?'เลย '+(-n)+' วัน':'อีก '+n+' วัน'}</span>`})():'<span class="pill muted">ยังไม่มีวันส่ง</span>';
     const inf=todoInfo(ids);
-    return `<div class="tdCard">
+    return `<div class="tdCard" data-grp="${esc(grpOfCard(g))}">
       <div class="tdRow">
         <div class="tdPic">${fee?'<span style="font-size:26px">🚚</span>':
           shirtBox(inf.pat,inf.col.c)+(inf.unknown?'<span class="tdQm" title="ชื่องานไม่ได้บอกสี">?</span>':'')}</div>
@@ -1828,7 +1843,7 @@ function renderTodo(){
       ${g.txt?`<div class="tdTxt">${esc(g.txt)}</div>`:''}
       <div class="tdBtns">
         ${fee?`<button class="btn2 tdSkip" data-ids="${esc(ids.join(','))}">✓ ไม่ต้องลงแผน (ค่าจัดส่ง)</button>`
-             :`<button class="btnG tdPlan" data-ids="${esc(ids.join(','))}">＋ ลงแผนทั้งชุด${ids.length>1?' ('+ids.length+' ไซส์)':''}</button>`}
+             :`<button class="btnG tdPlan" data-ids="${esc(ids.join(','))}" data-grp="${esc(grpOfCard(g))}">＋ ลงแผนทั้งชุด${ids.length>1?' ('+ids.length+' ไซส์)':''}</button>`}
         ${(!fee&&ids.length>1)?`<button class="btnG tdPickGo" style="display:none"></button>`:''}
         ${fee?'':`<button class="btn2 tdDrop" data-ids="${esc(ids.join(','))}" title="งานนี้ลงแผนที่อื่นไปแล้ว/ไม่ต้องลงแผน">✕ เอาออกจากคิว</button>`}
         ${(!fee&&ids.length>1)?`<span class="tdNote">กดเลือกบางเลขงานด้านบน = ลงแผน/เอาออก เฉพาะที่เลือก</span>`:''}
@@ -1846,6 +1861,7 @@ function renderTodo(){
   $$('#todoWrap .tdPlan').forEach(b=>b.onclick=()=>{
     const ids=b.dataset.ids.split(',');
     window.__planGroup=ids.slice(1);
+    window.__planGrp=b.dataset.grp||'';      // ออเดอร์เดียวกันหลายสี: จำชื่อชุดไว้ ไม่ให้การ์ดไปรวมกับสีอื่น
     wizStep1(ids[0]);
   });
   $$('#todoWrap .tdCard').forEach(cd=>{
@@ -1857,7 +1873,7 @@ function renderTodo(){
       if(e.target.classList.contains('tdGo'))return;      // กดลูกศร = ไป Nifty ไม่ใช่เลือก
       c.classList.toggle('on');sync()});
     btn.onclick=()=>{const ids=sel();if(!ids.length)return;
-      window.__planGroup=ids.slice(1);wizStep1(ids[0])};
+      window.__planGroup=ids.slice(1);window.__planGrp=cd.dataset.grp||'';wizStep1(ids[0])};
     sync();});
   $$('#todoWrap .tdDrop').forEach(b=>b.onclick=async()=>{
     const cd=b.closest('.tdCard');
@@ -2177,6 +2193,8 @@ async function openDrawer(id){
       SO ${esc(j.so_no||'—')} · เซล ${esc(j.sale_name||'—')} · ลูกค้า ${esc((j.customer||'—').slice(0,40))}<br>
       เปิดงาน ${j.opened_at?thDate(j.opened_at):'—'} · <b>due ลูกค้า ${j.due_date?thDate(j.due_date):'—'}</b>${p.internal_due?` · <b style="color:var(--brand)">due ภายใน ${thDate(p.internal_due)}</b>`:''}</div>
     ${sibTable(id)}
+    <div class="fld"><label>ชุดงาน (ออเดอร์เดียวกันหลายสี พิมพ์ชื่อชุดให้ต่างกัน การ์ดจะแยกให้ เช่น "2556-ดำ")</label>
+      <input id="pGrp" value="${esc(p.grp||'')}" placeholder="เว้นว่าง = ให้ระบบจัดกลุ่มเอง"></div>
     <div class="fld"><label>ชื่อเรียกสั้น (ใช้แทนชื่อยาวทุกที่: บอร์ด · รอลงแผน · หน้าซัพ/ช่าง · หน้าเซล — บันทึกให้ทั้งชุด)</label>
       <input id="pNick" value="${esc(p.nickname||'')}" placeholder="เช่น เสื้อโอเวอร์ไซส์ คุณเปตอง ขาว 55 ตัว"></div>
     <div class="row3">
@@ -2220,6 +2238,11 @@ async function openDrawer(id){
   $('#pIDue').onchange=async e=>{await procPatch(id,{internal_due:e.target.value||null});logEvent(id,'Due ภายใน',p.internal_due||'',e.target.value)};
   $('#pNote').onchange=async e=>{await procPatch(id,{note:e.target.value||null})};
   $$('#dBody .sibId').forEach(el=>el.onclick=()=>{const t=el.dataset.go;if(t&&t!==id)openDrawer(t)});
+  $('#pGrp').onchange=async e=>{const v=e.target.value.trim()||null;
+    const fam=siblingIds(id).filter(x=>PROC[x]);     // เลขที่อยู่ชุดเดียวกันตอนนี้ ย้ายไปชุดใหม่พร้อมกัน
+    await procPatchMany(fam.length?fam:[id],{grp:v});
+    logEvent(id,'ชุดงาน',p.grp||'',v||'');
+    toast(v?`ย้าย ${fam.length||1} เลขงานไปชุด "${v}" แล้ว`:'เอาออกจากชุดแล้ว (ให้ระบบจัดกลุ่มเอง)')};
   $('#pNick').onchange=async e=>{const v=e.target.value.trim()||null;
     const fam=siblingIds(id).filter(x=>PROC[x]);        // ทุกไซส์ของงานเดียวกันใช้ชื่อเดียวกัน
     await procPatchMany(fam.length?fam:[id],{nickname:v});
