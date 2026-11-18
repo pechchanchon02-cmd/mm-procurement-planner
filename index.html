@@ -631,7 +631,7 @@ body.saleview .saleSub{color:#8f8e84}
 <div id="modal"><div class="box">
   <h2>⚙ ตั้งค่า</h2>
   <div class="fld"><label>ชื่อคุณ (บันทึกประวัติการแก้)</label>
-    <select id="cWho"><option>เพชร</option><option>พี่แหวน</option><option>โม</option><option>กิ่ง</option><option>ภายใน</option><option>ทีมอื่น</option></select></div>
+    <select id="cWho"><option>เพชร</option><option>พี่แหวน</option><option>โม</option><option>กิ่ง</option><option>เฟิร์น</option><option>ภายใน</option><option>ทีมอื่น</option></select></div>
   <div class="fld"><label>Supabase URL</label><input id="cUrl" placeholder="https://xxxx.supabase.co"></div>
   <div class="fld"><label>Supabase anon key</label><input id="cKey" placeholder="eyJ..."></div>
   <div class="fld"><label>Sheet ID (ชีท raw)</label><input id="cSheet"></div>
@@ -741,7 +741,7 @@ async function handleSupChange(sel,apply){
   inp.onkeydown=e=>{if(e.key==='Enter')fin(true);if(e.key==='Escape')fin(false)};
   inp.onblur=()=>fin(true);}
 let view='running',filt={},calYM=null;
-const PICS=["เพชร","พี่แหวน","โม","กิ่ง","ภายใน","ทีมอื่น"];
+const PICS=["เพชร","พี่แหวน","โม","กิ่ง","เฟิร์น","ภายใน","ทีมอื่น"];
 const MCOLOR={fabric_pay:'var(--fab)',fabric_in:'var(--fab)',stock_pick:'var(--sew)',sew_done:'var(--sew)',
   to_screen:'var(--scr)',back_in:'var(--scr)',queue_in:'var(--scr)',ship:'var(--shp)',custom:'var(--gray)'};
 
