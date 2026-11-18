@@ -1929,10 +1929,12 @@ function renderSupShare(name){
 
 /* ============ ยอดเปิดงาน (เสื้อยืด) — วัดที่จังหวะงานเปิด ตัวเลขคิดที่บอท ============ */
 const SALES_API='https://mm-plan-bot.pechchanchon02.workers.dev/sales';
-let wkOff=0,wkWho='',wkData=null;
+const WK_PEOPLE=['กิ่ง','เฟิร์น'];   // คนที่มีหน้ายอดเปิดงานของตัวเอง · '' = กิ่ง (ค่าเริ่มของบอท)
+let wkOff=0,wkWho=null,wkData=null;
 const bahtS=n=>'฿'+Math.round(n||0).toLocaleString();
 const kShort=n=>n>=1e6?(n/1e6).toFixed(n>=1e7?0:1)+'ล้าน':n>=1000?Math.round(n/1000)+'K':String(Math.round(n||0));
 async function renderWeek(){
+  if(wkWho===null)wkWho=(WK_PEOPLE.includes(cfg.who)&&cfg.who!=='กิ่ง')?cfg.who:'';
   const w=$('#wkWrap');
   w.innerHTML='<div style="color:var(--mut);padding:24px;text-align:center">กำลังคิดตัวเลข…</div>';
   let d;
@@ -1955,7 +1957,7 @@ async function renderWeek(){
     <div class="supbox" style="padding:12px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <h2 style="padding:0;background:none;font-size:16px">🎯 ยอดเปิดงาน · ${esc(d.who==='all'?'ทั้งทีม':d.who)}</h2>
       <select id="wkWho" style="padding:6px 9px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);font-size:12.5px">
-        <option value="">กิ่ง</option><option value="all" ${d.who==='all'?'selected':''}>ทั้งทีม</option>
+        <option value="">กิ่ง</option>${WK_PEOPLE.slice(1).map(p=>`<option value="${esc(p)}" ${d.who===p?'selected':''}>${esc(p)}</option>`).join('')}<option value="all" ${d.who==='all'?'selected':''}>ทั้งทีม</option>
       </select>
       <span style="flex:1"></span>
       <button class="btn2" id="wkPrev">‹ สัปดาห์ก่อน</button>
@@ -1964,17 +1966,20 @@ async function renderWeek(){
       <button class="btnG" id="wkCopy">📋 copy รายงาน</button>
     </div>
 
-    <div class="qBox">
+    ${q.amount?`<div class="qBox">
       <div class="qTop"><b>เป้า ${esc(q.key)}</b><span>${bahtS(q.value)} / ${bahtS(q.amount)}</span></div>
       <div class="qBar"><i style="width:${Math.min(100,q.pct||0)}%"></i></div>
       <div class="qSub">${q.pct}% ของเป้า · เหลืออีก <b>${bahtS(q.gap)}</b> · เวลาอีก ${q.daysLeft} วัน
         ${q.perWeek?` · ต้องเปิดงานเฉลี่ย <b>${bahtS(q.perWeek)}/สัปดาห์</b>`:''}</div>
-    </div>
+    </div>`:`<div class="qBox">
+      <div class="qTop"><b>เป้า ${esc(q.key)}</b><span>${bahtS(q.value)}</span></div>
+      <div class="qSub">ยังไม่ได้ตั้งเป้าไตรมาสของ ${esc(d.who)} · เวลาอีก ${q.daysLeft} วัน</div>
+    </div>`}
 
     <div class="wkGrid">
       ${[['สัปดาห์นี้',bahtS(tw.value),`${tw.jobs} งาน · ตัดเย็บ ${tw.sewJobs} · สต๊อก ${tw.stockJobs}`,tw.value?'good':''],
          ['เดือนนี้',bahtS(mNow.value),`${mNow.jobs} งาน`,''],
-         [`${esc(q.key)} สะสม`,bahtS(q.value),`${q.so} ออเดอร์ · ${q.jobs} งาน`,q.pct>=100?'good':q.pct>=50?'warn':'crit'],
+         [`${esc(q.key)} สะสม`,bahtS(q.value),`${q.so} ออเดอร์ · ${q.jobs} งาน`,q.pct===null?'':q.pct>=100?'good':q.pct>=50?'warn':'crit'],
          ['ทั้งปี 2569 สะสม',bahtS(y.value),`${y.so} ออเดอร์ · ${y.jobs} งาน${y.amount?` · เป้า ${bahtS(y.amount)}`:' · ยังไม่ได้ตั้งเป้าทั้งปี'}`,'']]
         .map(([k,v,s2,c])=>`<div class="wkCard ${c}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s2}</div></div>`).join('')}
     </div>
@@ -2003,7 +2008,7 @@ async function renderWeek(){
       <div class="fld"><label>2. ติดอะไร ทำให้เปิดงานไม่ได้</label><input id="wkN2" placeholder="เช่น ลูกค้ายังไม่เคาะสี 3 งาน"></div>
       <div class="fld"><label>3. ต้องการอะไรจากเพชร/เซล</label><input id="wkN3" placeholder="เช่น ขอราคาผ้า C20 ล็อตใหม่"></div>
     </div>`;
-  const NKEY='wk.notes.'+d.week.from;
+  const NKEY='wk.notes.'+(d.who==='กิ่ง'?'':d.who+'.')+d.week.from;   // โน้ตแยกต่อคน (ของกิ่งใช้คีย์เดิม)
   try{const n=JSON.parse(localStorage.getItem(NKEY)||'{}');['1','2','3'].forEach(i=>{if(n['n'+i])$('#wkN'+i).value=n['n'+i]})}catch(e){}
   ['1','2','3'].forEach(i=>$('#wkN'+i).oninput=()=>{
     try{localStorage.setItem(NKEY,JSON.stringify({n1:$('#wkN1').value,n2:$('#wkN2').value,n3:$('#wkN3').value}))}catch(e){}});
@@ -2013,7 +2018,7 @@ async function renderWeek(){
   $$('#wkWrap .wkRow[data-id]').forEach(r=>r.onclick=()=>openDrawer(r.dataset.id));
   $('#wkCopy').onclick=()=>{
     const L=[`🎯 ยอดเปิดงาน (${d.who==='all'?'ทั้งทีม':d.who}) · ${d.week.label}`,'',
-      `• เป้า ${q.key}: ${bahtS(q.value)} / ${bahtS(q.amount)} = ${q.pct}% · เหลืออีก ${bahtS(q.gap)} ใน ${q.daysLeft} วัน`+(q.perWeek?` (เฉลี่ย ${bahtS(q.perWeek)}/สัปดาห์)`:''),
+      (q.amount?`• เป้า ${q.key}: ${bahtS(q.value)} / ${bahtS(q.amount)} = ${q.pct}% · เหลืออีก ${bahtS(q.gap)} ใน ${q.daysLeft} วัน`+(q.perWeek?` (เฉลี่ย ${bahtS(q.perWeek)}/สัปดาห์)`:''):`• ${q.key} สะสม: ${bahtS(q.value)} (ยังไม่ได้ตั้งเป้า)`),
       `• สะสมทั้งปี 2569: ${bahtS(y.value)} · ${y.so} ออเดอร์ · ${y.jobs} งาน`,
       `• สัปดาห์นี้: ${bahtS(tw.value)} · ${tw.jobs} งาน (ตัดเย็บใหม่ ${tw.sewJobs} · สต๊อก ${tw.stockJobs})`,''];
     if(d.rows.sew.length)L.push('งานตัดเย็บใหม่:',...d.rows.sew.map(r=>`  • ${r.id} ${r.title}${r.qty?' '+r.qty+' ตัว':''}${r.value?' = '+bahtS(r.value):''}`));
