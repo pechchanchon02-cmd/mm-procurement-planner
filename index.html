@@ -847,7 +847,8 @@ function sizeOf(id){const nm=jobName(id);
   let m=nm.match(new RegExp('\\[[A-Za-z0-9]+-('+SZRE+')\\]','i'));        // [2508GMT100-XXL]
   if(!m)m=nm.match(new RegExp('(?:ไซส์|ไซซ์|size)\\s*('+SZRE+')\\b','i'));  // "ไซส์ L"
   if(!m)m=nm.match(new RegExp('\\s('+SZRE+')(?=\\s|$)'));                 // "... XL" ท้ายชื่อ
-  return m?m[1].toUpperCase():''}
+  const sz=m?m[1].toUpperCase():'';
+  return sz==='XS'&&parseShape(nm)==='kids'?'SS':sz}                     // เสื้อเด็ก: ERP เขียน XS = SS ในตารางไซส์
 function nickOf(ids){for(const x of [].concat(ids)){const n=(PROC[x]||{}).nickname;if(n)return n}return ''}
 function siblingIds(id){        // เลขงานพี่น้อง = ออเดอร์+แบบเดียวกัน รวมไซส์ที่ถูกมัดไว้ในงานอื่นด้วย
   const key=designKey(id),out=new Set([id,...memberIds(id)]);
@@ -2523,6 +2524,7 @@ function woDraft(id){
     job_name:ex.job_name||j.name||'',shirt_color:ex.shirt_color||'#f4f4ef',main_image:ex.main_image??(imgOf(id)||'')};
   const pk=guessPattern(j.name),pat=PATTERNS.find(x=>x.pattern_key===pk);
   const sq=parseSizeQty(j.name);
+  if(pk==='kids'&&sq.XS){sq.SS=(sq.SS||0)+sq.XS;delete sq.XS}          // เสื้อเด็ก: XS ใน ERP = SS
   const sizes=(pat?pat.sizes:[]).map(x=>({size:x.size,chest_in:x.chest_in,len_in:x.len_in,qty:sq[x.size]??''}));
   Object.keys(sq).forEach(sz=>{if(!sizes.some(r=>r.size===sz))sizes.push({size:sz,chest_in:'',len_in:'',qty:sq[sz]})});
   return {job_id:id,pattern_key:pk,pattern_name:pat?pat.name:'',
