@@ -689,7 +689,10 @@ const PATTERN_DEFAULTS=[
  {pattern_key:'boxy',name:'เสื้อบ็อกซี่ ไหล่ตก ครอป',sku_ref:'2511GMT129',fabric_default:'Cotton100% comb 20',sort:30,
   sizes:[{size:'S',chest_in:42,len_in:25},{size:'M',chest_in:46,len_in:25.5},{size:'L',chest_in:50,len_in:26},{size:'XL',chest_in:54,len_in:27}]},
  {pattern_key:'babytee',name:'เสื้อเบบี้ที (MM04)',sku_ref:'2508GMT099',fabric_default:'Cotton100% comb 40 interlock',sort:40,
-  sizes:[{size:'S',chest_in:28,len_in:19},{size:'M',chest_in:31,len_in:19.5},{size:'L',chest_in:34,len_in:20},{size:'XL',chest_in:37,len_in:20.5}]}];
+  sizes:[{size:'S',chest_in:28,len_in:19},{size:'M',chest_in:31,len_in:19.5},{size:'L',chest_in:34,len_in:20},{size:'XL',chest_in:37,len_in:20.5}]},
+ // เสื้อยืดเด็ก — ตารางไซส์จาก Canva "[In use] เสื้อยืดเด็ก" (SS 2–3 ปี … 2XL 12–13 ปี)
+ {pattern_key:'kids',name:'เสื้อยืดเด็ก (Kids Basic Tee)',sku_ref:'2605GMT010',fabric_default:'Cotton100% semi 32',sort:50,
+  sizes:[{size:'SS',chest_in:22,len_in:15},{size:'S',chest_in:24,len_in:16},{size:'M',chest_in:26,len_in:17},{size:'L',chest_in:28,len_in:18},{size:'XL',chest_in:30,len_in:19},{size:'2XL',chest_in:32,len_in:20}]}];
 let PATTERNS=PATTERN_DEFAULTS.map(x=>({...x}));let WOS={};
 let STEPMASTER=STEP_DEFAULTS.map(x=>({...x}));
 let SUPPLIERS=['TSK','ช่างเสือ','ช่างขวัญ','ช่างศักดิ์','คลัง'];
@@ -776,7 +779,7 @@ function groupKey(id){
   return so||'';            // รหัสสินค้าเป็นรหัสเสื้อเปล่า ใช้แยกแบบไม่ได้ จึงจับกลุ่มด้วยเลขออเดอร์
 }
 function groupLabel(k){return 'ออเดอร์ '+(k||'')}
-const SZRE='(?:6XL|5XL|4XL|3XL|2XL|XXL|XL|XS|S|M|L)';
+const SZRE='(?:6XL|5XL|4XL|3XL|2XL|XXL|XL|XS|SS|S|M|L)';
 function designNorm(nm){      // ตัดไซส์/จำนวน/รหัสออก เหลือ "แบบ+สี" ที่ใช้แยกงานที่รันคนละรอบ
   let x=nm||'';
   x=x.replace(/^.*?\/(?:SO\d{6,})\//,'');
@@ -815,6 +818,7 @@ function parseQty(id){const t=jobName(id).replace(/,/g,'');
   const all=t.match(/(\d+(?:\.\d+)?)\s*(?:ตัว|ชิ้น|ใบ)/g)||[];        // ชื่องานที่ไล่ไซส์ทีละบรรทัด = บวกรวมให้
   return all.reduce((a,x)=>a+Math.round(parseFloat(x)),0)}
 function parseShape(nm){const x=(nm||'').toLowerCase();
+  if(/\bkids?\b|เด็ก|2605gmt010/.test(x))return 'kids';
   if(/boxy|บ็อกซี่|บ๊อกซี่/.test(x))return 'boxy';
   if(/baby|เบบี้/.test(x))return 'babytee';
   if(/oversize|โอเวอร์ไซ|drop.?shoulder|mm05/.test(x))return 'oversize';
@@ -835,10 +839,10 @@ function todoInfo(ids){
   ids.forEach(i=>{qty+=parseQty(i); if(!nm&&!isFeeJob(i))nm=jobName(i)});
   const col=parseColor(nm)||{n:'ไม่ระบุสี',c:'#f4f4ef'};
   const pat=parseShape(nm);
-  const PN={basic:'ทรงปกติ',oversize:'โอเวอร์ไซส์',boxy:'บ็อกซี่',babytee:'เบบี้ที'};
+  const PN={basic:'ทรงปกติ',oversize:'โอเวอร์ไซส์',boxy:'บ็อกซี่',babytee:'เบบี้ที',kids:'เด็ก'};
   return {qty,pat,patName:PN[pat]||pat,col,unknown:!parseColor(nm)};
 }
-const SZORD=['XS','S','M','L','XL','2XL','XXL','3XL','4XL','5XL','6XL'];
+const SZORD=['SS','XS','S','M','L','XL','2XL','XXL','3XL','4XL','5XL','6XL'];
 function sizeOf(id){const nm=jobName(id);
   let m=nm.match(new RegExp('\\[[A-Za-z0-9]+-('+SZRE+')\\]','i'));        // [2508GMT100-XXL]
   if(!m)m=nm.match(new RegExp('(?:ไซส์|ไซซ์|size)\\s*('+SZRE+')\\b','i'));  // "ไซส์ L"
@@ -2452,13 +2456,14 @@ function makeDrag(container,rowSel,onDrop){
   });}
 /* ================= work order (ใบสั่งผลิต) ================= */
 function guessPattern(name){name=(name||'').toLowerCase();
+  if(/\bkids?\b|เด็ก|2605gmt010/.test(name))return'kids';
   if(/boxy|บ๊อก|บ็อก/.test(name))return'boxy';
   if(/baby|เบบี้/.test(name))return'babytee';
   if(/oversiz|โอเวอร์/.test(name))return'oversize';
   return'basic'}
 function guessQty(name){const m=(name||'').replace(/,/g,'').match(/รวม\s*(\d{1,6})\s*(ตัว|ใบ|ชิ้น)/)||(name||'').replace(/,/g,'').match(/(\d{1,6})\s*(ตัว|ใบ|ชิ้น)/);return m?+m[1]:null}
 function parseSizeQty(name){ // "M - 19 ตัว ... 3XL - 15 ตัว" -> {M:19,'3XL':15}
-  const out={};const re=/(5XL|4XL|3XL|2XL|XXL|XL|L|M|S)\s*[-–:]\s*(\d{1,5})\s*ตัว/gi;
+  const out={};const re=/(5XL|4XL|3XL|2XL|XXL|XL|SS|L|M|S)\s*[-–:]\s*(\d{1,5})\s*ตัว/gi;
   let m;while((m=re.exec(name||''))!==null)out[m[1].toUpperCase()]=(out[m[1].toUpperCase()]||0)+ +m[2];
   return out}
 function msPlan(id,keys){for(const k of keys){const m=msOf(id).find(x=>x.mkey===k);if(m&&m.plan_date)return m.plan_date}return null}
@@ -2493,9 +2498,9 @@ function shirtSVG(pk,color){
     return (r*.3+g*.6+b*.1)<110})();
   const line=dark?'#00000055':'#00000022', fold=dark?'#ffffff22':'#00000012';
   // proportions per pattern: [bodyW, bodyH, sleeveDrop]
-  const p={basic:[150,190,52],oversize:[186,196,70],boxy:[196,150,72],babytee:[118,128,34]}[pk]||[150,190,52];
+  const p={basic:[150,190,52],oversize:[186,196,70],boxy:[196,150,72],babytee:[118,128,34],kids:[124,140,40]}[pk]||[150,190,52];
   const [bw,bh,sl]=p, cx=200;
-  const x1=cx-bw/2,x2=cx+bw/2,neckW=pk==='babytee'?46:56;
+  const x1=cx-bw/2,x2=cx+bw/2,neckW=(pk==='babytee'||pk==='kids')?46:56;
   return `<svg viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg">
     <g stroke="${line}" stroke-width="3" stroke-linejoin="round">
       <path fill="${color}" d="M ${cx-neckW/2-14} 52
