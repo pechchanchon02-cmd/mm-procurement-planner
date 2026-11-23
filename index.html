@@ -688,8 +688,11 @@ const PATTERN_DEFAULTS=[
   sizes:[{size:'M',chest_in:40,len_in:27},{size:'L',chest_in:44,len_in:28},{size:'XL',chest_in:48,len_in:29},{size:'2XL',chest_in:52,len_in:30}]},
  {pattern_key:'boxy',name:'เสื้อบ็อกซี่ ไหล่ตก ครอป',sku_ref:'2511GMT129',fabric_default:'Cotton100% comb 20',sort:30,
   sizes:[{size:'S',chest_in:42,len_in:25},{size:'M',chest_in:46,len_in:25.5},{size:'L',chest_in:50,len_in:26},{size:'XL',chest_in:54,len_in:27}]},
- {pattern_key:'babytee',name:'เสื้อเบบี้ที (MM04)',sku_ref:'2508GMT099',fabric_default:'Cotton100% comb 40 interlock',sort:40,
-  sizes:[{size:'S',chest_in:28,len_in:19},{size:'M',chest_in:31,len_in:19.5},{size:'L',chest_in:34,len_in:20},{size:'XL',chest_in:37,len_in:20.5}]},
+ // เบบี้ที มี 2 ชุด: ชุดเดิม S–XL (งานก่อน 23 พ.ย. 69 + เคลียร์สต๊อก) · ชุดใหม่ 3 ไซส์ S/M/L(Free) ตั้งแต่ 23 พ.ย. 69
+ {pattern_key:'babytee',name:'เบบี้ที ชุดเดิม S–XL (MM04 · งานก่อน 23 พ.ย. 69)',sku_ref:'2606GMT001',fabric_default:'Cotton100% comb40 interlock',sort:40,
+  sizes:[{size:'S',chest_in:27,len_in:18.5,chest_cm:68.5,len_cm:47},{size:'M',chest_in:29,len_in:19,chest_cm:73.5,len_cm:48},{size:'L',chest_in:30.5,len_in:19.5,chest_cm:77.5,len_cm:49.5},{size:'XL',chest_in:32,len_in:20,chest_cm:81,len_cm:51}]},
+ {pattern_key:'babytee3',name:'เบบี้ที ใหม่ 3 ไซส์ (MM04 · ตั้งแต่ 23 พ.ย. 69 · L = Free size)',sku_ref:'2611GA00037',fabric_default:'Cotton100% comb40 interlock',sort:41,
+  sizes:[{size:'S',chest_in:29,len_in:19,chest_cm:73.5,len_cm:48},{size:'M',chest_in:32,len_in:20,chest_cm:81,len_cm:51},{size:'L',chest_in:36,len_in:21.5,chest_cm:91.5,len_cm:54.5}]},
  // เสื้อยืดเด็ก — ตารางไซส์จาก Canva "[In use] เสื้อยืดเด็ก" (SS 2–3 ปี … 2XL 12–13 ปี)
  {pattern_key:'kids',name:'เสื้อยืดเด็ก (Kids Basic Tee)',sku_ref:'2605GMT010',fabric_default:'Cotton100% semi 32',sort:50,
   sizes:[{size:'SS',chest_in:22,len_in:15},{size:'S',chest_in:24,len_in:16},{size:'M',chest_in:26,len_in:17},{size:'L',chest_in:28,len_in:18},{size:'XL',chest_in:30,len_in:19},{size:'2XL',chest_in:32,len_in:20}]}];
@@ -820,7 +823,7 @@ function parseQty(id){const t=jobName(id).replace(/,/g,'');
 function parseShape(nm){const x=(nm||'').toLowerCase();
   if(/\bkids?\b|เด็ก|2605gmt010/.test(x))return 'kids';
   if(/boxy|บ็อกซี่|บ๊อกซี่/.test(x))return 'boxy';
-  if(/baby|เบบี้/.test(x))return 'babytee';
+  if(/baby|เบบี้|2611ga0003[789]/.test(x))return 'babytee';
   if(/oversize|โอเวอร์ไซ|drop.?shoulder|mm05/.test(x))return 'oversize';
   if(/mm08|signature tee|ทรงปกติ|basic/.test(x))return 'basic';
   return 'basic'}
@@ -2456,10 +2459,17 @@ function makeDrag(container,rowSel,onDrop){
         r.parentElement.insertBefore(drag,after?r.nextSibling:r);}};
   });}
 /* ================= work order (ใบสั่งผลิต) ================= */
-function guessPattern(name){name=(name||'').toLowerCase();
+// เบบี้ที: SKU ใหม่ 2611GA00037–39 / "free size" = ชุด 3 ไซส์ · SKU เดิม 2606GMT001 / 2508GMT099 = ชุดเดิม S–XL
+// ไม่มี SKU ในชื่อ → ดูวันเปิดงาน: ตั้งแต่ 23 พ.ย. 69 = ชุดใหม่
+const BABY3_FROM='2026-11-23';
+function babyKind(name,opened){const x=(name||'').toLowerCase();
+  if(/2611ga0003[789]|free\s*size|ฟรีไซ/.test(x))return'babytee3';
+  if(/2606gmt001|2508gmt099/.test(x))return'babytee';
+  return (opened&&opened>=BABY3_FROM)?'babytee3':'babytee'}
+function guessPattern(name,opened){const raw=name;name=(name||'').toLowerCase();
   if(/\bkids?\b|เด็ก|2605gmt010/.test(name))return'kids';
   if(/boxy|บ๊อก|บ็อก/.test(name))return'boxy';
-  if(/baby|เบบี้/.test(name))return'babytee';
+  if(/baby|เบบี้|2611ga0003[789]/.test(name))return PATTERNS.some(p=>p.pattern_key==='babytee3')?babyKind(raw,opened):'babytee';
   if(/oversiz|โอเวอร์/.test(name))return'oversize';
   return'basic'}
 function guessQty(name){const m=(name||'').replace(/,/g,'').match(/รวม\s*(\d{1,6})\s*(ตัว|ใบ|ชิ้น)/)||(name||'').replace(/,/g,'').match(/(\d{1,6})\s*(ตัว|ใบ|ชิ้น)/);return m?+m[1]:null}
@@ -2480,7 +2490,7 @@ const SHIRT_FOLDER={
  oversize:{'ขาว':'WHITE','ครีม':'BEIGE','ดำ':'BLACK','น้ำตาล':'BROWN','ฟ้า':'BLUE_4L','เขียว':'GREEN','เขียวขี้ม้า':'DARK_MINT_1','ส้ม':'ORANGE','ม่วง':'VIOLET'},
  boxy:{'ขาว':'WHITE','ดำ':'BLACK','น้ำตาล':'BROWN','กรม':'DARK_BLUE'},
  babytee:{'ขาว':'WHITE','ดำ':'BLACK','ชมพู':'PINK_PASTEL'}};
-function shirtPhoto(pk,color){            // คืน url รูปจริง ถ้ามีสีนั้น ไม่มีก็คืนตัวขาวไว้ย้อมสี
+function shirtPhoto(pk,color){if(pk==='babytee3')pk='babytee';            // คืน url รูปจริง ถ้ามีสีนั้น ไม่มีก็คืนตัวขาวไว้ย้อมสี
   const m=SHIRT_FOLDER[pk]; if(!m)return null;
   const nm=(SHIRT_COLORS.find(c=>c.c===color)||{}).n||'';
   const f=m[nm]||m['ขาว']; if(!f)return null;
@@ -2493,7 +2503,7 @@ function shirtBox(pk,color,px){           // <div> รูปเสื้อ ถ�
   if(p.exact)return `<img src="${p.url}" style="width:100%;height:100%;object-fit:contain" loading="lazy">`;
   return `<div style="width:100%;height:100%;${tint}"></div>`;
 }
-function shirtSVG(pk,color){
+function shirtSVG(pk,color){if(pk==='babytee3')pk='babytee';
   color=color||'#f4f4ef';
   const dark=(()=>{const h=color.replace('#','');const r=parseInt(h.substr(0,2),16),g=parseInt(h.substr(2,2),16),b=parseInt(h.substr(4,2),16);
     return (r*.3+g*.6+b*.1)<110})();
@@ -2522,7 +2532,7 @@ function woDraft(id){
   const j=JOBS[id]||{},p=PROC[id]||{},ex=WOS[id];
   if(ex)return {...ex,sizes:(ex.sizes||[]).map(x=>({...x})),extra_rows:ex.extra_rows||[],images:ex.images||[],
     job_name:ex.job_name||j.name||'',shirt_color:ex.shirt_color||'#f4f4ef',main_image:ex.main_image??(imgOf(id)||'')};
-  const pk=guessPattern(j.name),pat=PATTERNS.find(x=>x.pattern_key===pk);
+  const pk=guessPattern(j.name,j.opened_at),pat=PATTERNS.find(x=>x.pattern_key===pk);
   const sq=parseSizeQty(j.name);
   if(pk==='kids'&&sq.XS){sq.SS=(sq.SS||0)+sq.XS;delete sq.XS}          // เสื้อเด็ก: XS ใน ERP = SS
   const sizes=(pat?pat.sizes:[]).map(x=>({size:x.size,chest_in:x.chest_in,len_in:x.len_in,qty:sq[x.size]??''}));
