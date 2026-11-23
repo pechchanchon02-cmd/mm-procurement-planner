@@ -454,6 +454,14 @@ body.saleview .sdWhen.late{color:#f19a9a}
   padding:7px 0;border-top:1px solid var(--line);font-size:13px}
 .wkRow small{display:block;font-size:11.5px;color:var(--ink-3)}
 .wkRow .pill{font-size:11px}
+.tgGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px}
+.tgGrid .qBox{margin-bottom:12px}
+.bigC .v{font-size:30px}
+.spBar{display:flex;height:9px;border-radius:999px;overflow:hidden;background:var(--surface-3);margin:10px 0 6px}
+.spBar i{display:block;height:100%}.spBar .sew,.dot.sew{background:var(--accent)}.spBar .stk,.dot.stk{background:var(--scr)}
+.spRow{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:baseline;font-size:12.5px;padding:3px 0}
+.spRow span:nth-child(2){color:var(--ink-3);font-size:11.5px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
 .qBox{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-bottom:12px}
 .qTop{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;margin-bottom:7px}
 .qTop span{font-family:var(--font-display);font-size:19px;font-weight:700}
@@ -571,13 +579,13 @@ body.saleview .saleSub{color:#8f8e84}
   <h1>🧵 Procurement Planner<span class="sub">MerchMaker</span></h1>
   <span id="demoBadge" class="demo" style="display:none">DEMO</span>
   <nav class="tabs">
-    <button class="on" data-v="running">Running <span class="badge zero" id="nRun">0</span></button>
+    <button class="on" data-v="wk">🎯 ยอดเสื้อ</button>
+    <button data-v="running">Running <span class="badge zero" id="nRun">0</span></button>
     <button data-v="cal">ปฏิทิน</button>
     <button data-v="gantt">Timeline</button>
     <button data-v="sup">ซัพพลายเออร์ <span class="badge zero" id="nSup">0</span></button>
     <button data-v="todo">รอลงแผน <span class="badge zero" id="nTodo">0</span></button>
     <button data-v="kpi">KPI</button>
-    <button data-v="wk">🎯 ยอดเปิดงาน</button>
   </nav>
   <span class="sp"></span>
   <button class="btnG" id="bNew">＋ เปิดงาน</button>
@@ -746,7 +754,7 @@ async function handleSupChange(sel,apply){
     sel.value=name;apply(name)};
   inp.onkeydown=e=>{if(e.key==='Enter')fin(true);if(e.key==='Escape')fin(false)};
   inp.onblur=()=>fin(true);}
-let view='running',filt={},calYM=null;
+let view='wk',filt={},calYM=null;   // หน้าแรก = สรุปยอดเสื้อ
 const PICS=["เพชร","พี่แหวน","โม","กิ่ง","เฟิร์น","ภายใน","ทีมอื่น"];
 const MCOLOR={fabric_pay:'var(--fab)',fabric_in:'var(--fab)',stock_pick:'var(--sew)',sew_done:'var(--sew)',
   to_screen:'var(--scr)',back_in:'var(--scr)',queue_in:'var(--scr)',ship:'var(--shp)',custom:'var(--gray)'};
@@ -1935,104 +1943,123 @@ function renderSupShare(name){
     ${!nowI.length&&!inI.length?'<div style="color:var(--mut);padding:24px">ตอนนี้ไม่มีงานค้างครับ 🎉</div>':''}`;
 }
 
-/* ============ ยอดเปิดงาน (เสื้อยืด) — วัดที่จังหวะงานเปิด ตัวเลขคิดที่บอท ============ */
+/* ============ หน้าแรก: ยอดเสื้อ MerchMaker ที่จัดซื้อดูแล — ตัวเลขคิดที่บอทจาก SO ใน ERP ============ */
 const SALES_API='https://mm-plan-bot.pechchanchon02.workers.dev/sales';
-const WK_PEOPLE=['กิ่ง','เฟิร์น'];   // คนที่มีหน้ายอดเปิดงานของตัวเอง · '' = กิ่ง (ค่าเริ่มของบอท)
-let wkOff=0,wkWho=null,wkData=null;
+const WK_PEOPLE=['กิ่ง','เฟิร์น'];   // คนจัดซื้อที่มียอดของตัวเอง (PIC บนบอร์ด)
+let wkOff=0,wkWho='all',wkData=null,wkKey='',wkAt=0;
 const bahtS=n=>'฿'+Math.round(n||0).toLocaleString();
 const kShort=n=>n>=1e6?(n/1e6).toFixed(n>=1e7?0:1)+'ล้าน':n>=1000?Math.round(n/1000)+'K':String(Math.round(n||0));
+const pcs=n=>Math.round(n||0).toLocaleString()+' ตัว';
+const SHARE_LINK=/[?&](s|wo|sup|sale)=/.test(location.search);   // ลิงก์ช่าง/เซล/ใบงาน ไม่ผ่านรหัสทีม — ห้ามโหลดยอดขาย
 async function renderWeek(){
-  if(wkWho===null)wkWho=(WK_PEOPLE.includes(cfg.who)&&cfg.who!=='กิ่ง')?cfg.who:'';
-  const w=$('#wkWrap');
-  w.innerHTML='<div style="color:var(--mut);padding:24px;text-align:center">กำลังคิดตัวเลข…</div>';
-  let d;
-  try{d=await (await fetch(`${SALES_API}?w=${wkOff}${wkWho?'&who='+encodeURIComponent(wkWho):''}`)).json()}
-  catch(e){w.innerHTML=`<div style="color:var(--crit-ink);padding:24px;text-align:center">ดึงข้อมูลไม่ได้: ${esc(e.message)}</div>`;return}
-  wkData=d;
-  const q=d.quarter,y=d.year,tw=d.thisWeek;
-  const mNow=d.months[new Date().getMonth()]||{value:0,jobs:0};
-  const maxW=Math.max(1,...d.weeks.map(x=>x.value));
-  const maxM=Math.max(1,...d.months.map(x=>x.value));
-  let run=0;const cum=d.months.map(m=>{run+=m.value;return run});
+  if(SHARE_LINK)return;
+  const w=$('#wkWrap'),key=wkOff+'|'+wkWho;
+  let d=wkData;
+  if(!d||wkKey!==key||Date.now()-wkAt>5*60e3){      // บอร์ดวาดใหม่บ่อย — ดึงยอดใหม่ทุก 5 นาที หรือเมื่อเปลี่ยนสัปดาห์/คน
+    if(!d||wkKey!==key)w.innerHTML='<div style="color:var(--ink-3);padding:24px;text-align:center">กำลังคิดยอด…</div>';
+    try{d=await (await fetch(`${SALES_API}?w=${wkOff}&who=${encodeURIComponent(wkWho)}`)).json();if(d.error||!d.month)throw new Error(d.error||'ข้อมูลไม่ครบ')}
+    catch(e){w.innerHTML=`<div style="color:var(--crit-ink);padding:24px;text-align:center">ดึงยอดไม่ได้: ${esc(e.message)}</div>`;return}
+    wkData=d;wkKey=key;wkAt=Date.now();
+  }
+  const m=d.month,tw=d.thisWeek,y=d.year,team=d.who==='all';
+  const nextT=d.months.find(x=>x.target&&x.from>m.key+'-01');
+  const split=(t)=>{const sv=t.value?Math.round(t.sew.value/t.value*100):0;
+    return `<div class="spBar" aria-hidden="true"><i class="sew" style="width:${sv}%"></i><i class="stk" style="width:${t.value?100-sv:0}%"></i></div>
+      <div class="spRow"><span><b class="dot sew"></b>ตัดใหม่</span><span>${t.sew.orders} ออเดอร์ · ${pcs(t.sew.qty)}</span><b>${bahtS(t.sew.value)}</b></div>
+      <div class="spRow"><span><b class="dot stk"></b>สต๊อก</span><span>${t.stock.orders} ออเดอร์ · ${pcs(t.stock.qty)}</span><b>${bahtS(t.stock.value)}</b></div>`};
+  const bigCard=(lab,t,sub)=>`<div class="wkCard bigC"><div class="k">${lab}</div>
+      <div class="v">${bahtS(t.value)}</div><div class="s">${t.orders} ออเดอร์ · ${pcs(t.qty)}${sub?' · '+sub:''}</div>${split(t)}</div>`;
   const bar=(v,max,lab,sub,on)=>`<div class="sbCol" title="${esc(lab+' · '+bahtS(v)+' · '+sub)}">
     <div class="sbVal">${v?kShort(v):''}</div>
     <div class="sbBar ${on?'on':''}" style="height:${Math.max(2,Math.round(v/max*100))}%"></div>
     <div class="sbLab">${esc(lab)}</div></div>`;
-  const rowJob=r=>`<div class="wkRow" data-id="${esc(r.id)}" style="cursor:pointer">
-    <span><b>${esc(r.title)}</b><small>${esc(r.id)}${r.so?' · '+esc(r.so):''}${r.customer?' · '+esc(r.customer.slice(0,28)):''}${r.qty?' · '+r.qty.toLocaleString()+' ตัว':''}</small></span>
-    <span class="pill ${r.value?'ok':'muted'}">${r.value?bahtS(r.value):'—'}</span></div>`;
+  const maxW=Math.max(1,...d.weeks.map(x=>x.value));
+  const curM=+m.key.slice(5);
+  const mRows=d.months.filter((x,i)=>i<curM||x.target);
+  const done=d.months.slice(0,curM-1).filter(x=>x.orders);       // เดือนที่จบแล้ว ใช้คิดค่าเฉลี่ย
+  const avg=k=>done.length?done.reduce((a,x)=>a+(k(x)||0),0)/done.length:0;
+  const tgtBox=(lab,t,target,pct,gap,extra)=>`<div class="qBox">
+      <div class="qTop"><b>${lab}</b><span>${bahtS(t)} / ${bahtS(target)}</span></div>
+      <div class="qBar"><i style="width:${Math.min(100,pct||0)}%"></i></div>
+      <div class="qSub">${pct}% ของเป้า · เหลืออีก <b>${bahtS(gap)}</b>${extra||''}</div></div>`;
+  const me=WK_PEOPLE.includes(cfg.who)?cfg.who:'';
   w.innerHTML=`
     <div class="supbox" style="padding:12px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <h2 style="padding:0;background:none;font-size:16px">🎯 ยอดเปิดงาน · ${esc(d.who==='all'?'ทั้งทีม':d.who)}</h2>
-      <select id="wkWho" style="padding:6px 9px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);font-size:12.5px">
-        <option value="">กิ่ง</option>${WK_PEOPLE.slice(1).map(p=>`<option value="${esc(p)}" ${d.who===p?'selected':''}>${esc(p)}</option>`).join('')}<option value="all" ${d.who==='all'?'selected':''}>ทั้งทีม</option>
+      <h2 style="padding:0;background:none;font-size:16px">🎯 ยอดเสื้อ MerchMaker ที่จัดซื้อดูแล</h2>
+      <select id="wkWho" aria-label="ดูยอดของใคร" style="padding:6px 9px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);font-size:12.5px">
+        <option value="all" ${team?'selected':''}>ทั้งทีม</option>${WK_PEOPLE.map(p=>`<option value="${esc(p)}" ${d.who===p?'selected':''}>${esc(p)}</option>`).join('')}
       </select>
       <span style="flex:1"></span>
-      <button class="btn2" id="wkPrev">‹ สัปดาห์ก่อน</button>
-      <span style="font-size:12.5px;font-weight:600">${esc(d.week.label)}</span>
-      <button class="btn2" id="wkNext" ${wkOff>=0?'disabled style="opacity:.4"':''}>› สัปดาห์ถัดไป</button>
       <button class="btnG" id="wkCopy">📋 copy รายงาน</button>
+      <div style="flex-basis:100%;font-size:11.5px;color:var(--ink-3)">นับจากใบสั่งขาย (SO) ที่อนุมัติแล้วใน ERP · เฉพาะบรรทัดเสื้อยืดของ MerchMaker (ไม่รวม Giftwise) · ตัดใหม่/สต๊อก ตามประเภทสินค้าใน ERP${team?'':` · ยอดของ ${esc(d.who)} = ออเดอร์ที่มีงานบนบอร์ดเป็น PIC ของเขา`}</div>
     </div>
 
-    ${q.amount?`<div class="qBox">
-      <div class="qTop"><b>เป้า ${esc(q.key)}</b><span>${bahtS(q.value)} / ${bahtS(q.amount)}</span></div>
-      <div class="qBar"><i style="width:${Math.min(100,q.pct||0)}%"></i></div>
-      <div class="qSub">${q.pct}% ของเป้า · เหลืออีก <b>${bahtS(q.gap)}</b> · เวลาอีก ${q.daysLeft} วัน
-        ${q.perWeek?` · ต้องเปิดงานเฉลี่ย <b>${bahtS(q.perWeek)}/สัปดาห์</b>`:''}</div>
-    </div>`:`<div class="qBox">
-      <div class="qTop"><b>เป้า ${esc(q.key)}</b><span>${bahtS(q.value)}</span></div>
-      <div class="qSub">ยังไม่ได้ตั้งเป้าไตรมาสของ ${esc(d.who)} · เวลาอีก ${q.daysLeft} วัน</div>
-    </div>`}
+    ${team?`<div class="tgGrid">
+      ${m.target?tgtBox(`เป้าเดือน ${esc(m.label)}`,m.value,m.target,m.pct,m.gap,` · เวลาอีก ${m.daysLeft} วัน`)
+        :`<div class="qBox"><div class="qTop"><b>เดือน ${esc(m.label)}</b><span>${bahtS(m.value)}</span></div>
+          <div class="qSub">เดือนนี้ไม่มีเป้า${nextT?` · เป้า ${esc(nextT.key)} = <b>${bahtS(nextT.target)}</b>`:''}</div></div>`}
+      ${tgtBox(`เป้าทั้งปี ${esc(y.key)}`,y.value,y.target,y.pct,y.gap,` · ${y.orders.toLocaleString()} ออเดอร์ · ${pcs(y.qty)}`)}
+    </div>`:''}
 
-    <div class="wkGrid">
-      ${[['สัปดาห์นี้',bahtS(tw.value),`${tw.jobs} งาน · ตัดเย็บ ${tw.sewJobs} · สต๊อก ${tw.stockJobs}`,tw.value?'good':''],
-         ['เดือนนี้',bahtS(mNow.value),`${mNow.jobs} งาน`,''],
-         [`${esc(q.key)} สะสม`,bahtS(q.value),`${q.so} ออเดอร์ · ${q.jobs} งาน`,q.pct===null?'':q.pct>=100?'good':q.pct>=50?'warn':'crit'],
-         ['ทั้งปี 2569 สะสม',bahtS(y.value),`${y.so} ออเดอร์ · ${y.jobs} งาน${y.amount?` · เป้า ${bahtS(y.amount)}`:' · ยังไม่ได้ตั้งเป้าทั้งปี'}`,'']]
-        .map(([k,v,s2,c])=>`<div class="wkCard ${c}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s2}</div></div>`).join('')}
+    <div class="wkGrid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
+      ${bigCard(`เดือนนี้ · ${esc(m.label)}`,m)}
+      ${bigCard(`สัปดาห์นี้ · ${esc(d.week.label)}`,tw,wkOff?'':'')}
+    </div>
+
+    ${team?`<div class="supbox" style="overflow-x:auto"><div class="supsec">ยอดของแต่ละคน (ตามงานบนบอร์ดที่เป็น PIC)</div>
+      <table class="ktab"><thead><tr><th>คน</th><th>เดือนนี้</th><th>สัปดาห์นี้</th><th>ทั้งปี</th></tr></thead><tbody>
+      ${d.byPerson.map(p=>`<tr ${p.name===me?'style="background:var(--accent-soft)"':''}><td><b>${esc(p.name)}</b>${p.name===me?' <small style="color:var(--accent-ink)">(คุณ)</small>':''}</td>
+        ${[p.month,p.week,p.year].map(t=>`<td><b>${bahtS(t.value)}</b><br><small style="color:var(--ink-3)">${t.orders} ออเดอร์ · ${pcs(t.qty)}</small></td>`).join('')}</tr>`).join('')}
+      </tbody></table>
+      <div style="font-size:11.5px;color:var(--ink-3);padding:6px 14px 10px">"ไม่มีบนบอร์ด" = ออเดอร์ที่ไม่มีงานบนบอร์ดนี้ (ส่วนใหญ่ขายจากสต๊อก)</div></div>`:''}
+
+    <div class="supbox" style="overflow-x:auto"><div class="supsec">ออเดอร์ที่รันต่อเดือน · ปี ${esc(y.key)}</div>
+      <table class="ktab"><thead><tr><th>เดือน</th><th>ออเดอร์</th><th>จำนวนเสื้อ</th><th>มูลค่า</th><th>ตัดใหม่</th><th>สต๊อก</th>${team?'<th>เป้า</th>':''}</tr></thead><tbody>
+      ${mRows.map((x,i)=>`<tr ${x.from.slice(0,7)===m.key?'style="background:var(--surface-2)"':''}><td><b>${esc(x.key)}</b></td><td>${x.orders}</td><td>${pcs(x.qty)}</td>
+        <td><b>${bahtS(x.value)}</b></td><td>${bahtS(x.sew.value)}</td><td>${bahtS(x.stock.value)}</td>
+        ${team?`<td>${x.target?`${bahtS(x.target)} <small style="color:var(--ink-3)">(${Math.round(x.value/x.target*100)}%)</small>`:'—'}</td>`:''}</tr>`).join('')}
+      ${done.length?`<tr style="border-top:2px solid var(--line-2)"><td><b>เฉลี่ย/เดือน</b><br><small style="color:var(--ink-3)">${done.length} เดือนที่จบแล้ว</small></td>
+        <td>${Math.round(avg(x=>x.orders))}</td><td>${pcs(avg(x=>x.qty))}</td><td><b>${bahtS(avg(x=>x.value))}</b></td>
+        <td>${bahtS(avg(x=>x.sew.value))}</td><td>${bahtS(avg(x=>x.stock.value))}</td>${team?'<td></td>':''}</tr>`:''}
+      </tbody></table></div>
+
+    <div class="supbox" style="padding:12px 14px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <div class="wkSec" style="margin:0">มูลค่าออเดอร์รายสัปดาห์ · 12 สัปดาห์ล่าสุด</div><span style="flex:1"></span>
+        <button class="btn2" id="wkPrev">‹ สัปดาห์ก่อน</button>
+        <span style="font-size:12.5px;font-weight:600">${esc(d.week.label)}</span>
+        <button class="btn2" id="wkNext" ${wkOff>=0?'disabled style="opacity:.4"':''}>สัปดาห์ถัดไป ›</button></div>
+      <div class="sbWrap">${d.weeks.map((x,i)=>bar(x.value,maxW,x.label,`${x.orders} ออเดอร์ · ${pcs(x.qty)}`,i===d.weeks.length-1)).join('')}</div>
     </div>
 
     <div class="supbox" style="padding:12px 14px">
-      <div class="wkSec" style="margin-top:0">มูลค่างานที่เปิด · 12 สัปดาห์ล่าสุด</div>
-      <div class="sbWrap">${d.weeks.map((x,i)=>bar(x.value,maxW,x.label,`${x.jobs} งาน`,i===d.weeks.length-1)).join('')}</div>
-      <div class="wkSec">รายเดือน ปี 2569 (ตัวเลขบนแท่ง = สะสม)</div>
-      <div class="sbWrap">${d.months.map((m,i)=>`<div class="sbCol" title="${esc(m.key)} · ${bahtS(m.value)} · ${m.jobs} งาน">
-        <div class="sbVal">${m.value?kShort(cum[i]):''}</div>
-        <div class="sbBar ${m.from.slice(0,7)===new Date().toISOString().slice(0,7)?'on':''}" style="height:${Math.max(2,Math.round(m.value/maxM*100))}%"></div>
-        <div class="sbLab">${esc(m.key)}</div></div>`).join('')}</div>
-      <div style="font-size:11.5px;color:var(--ink-3);margin-top:6px">ข้อมูลบนบอร์ดเริ่มจาก ${d.dataFrom?esc(thDate(d.dataFrom)):'—'} · มูลค่า = SO ของงานนั้น (นับ 1 ครั้งต่อออเดอร์ ตอนงานเปิด) · งานสต๊อกไม่มีมูลค่าขาย</div>
-    </div>
-
-    <div class="supbox" style="padding:12px 14px">
-      <div class="wkSec" style="margin-top:0">🧵 งานตัดเย็บใหม่ที่เปิดสัปดาห์นี้ (${d.rows.sew.length}) · ${bahtS(d.rows.sew.reduce((a,r)=>a+r.value,0))}</div>
-      ${d.rows.sew.length?d.rows.sew.map(rowJob).join(''):'<div style="color:var(--mut);font-size:12.5px;padding:8px 0">ยังไม่มีงานตัดเย็บใหม่สัปดาห์นี้</div>'}
-      <div class="wkSec">📦 งานสต๊อกที่เปิดสัปดาห์นี้ (${d.rows.stock.length})</div>
-      ${d.rows.stock.length?d.rows.stock.map(rowJob).join(''):'<div style="color:var(--mut);font-size:12.5px;padding:8px 0">ยังไม่มีงานสต๊อกสัปดาห์นี้</div>'}
+      <div class="wkSec" style="margin-top:0">ออเดอร์สัปดาห์นี้ (${d.weekList.length}) · ${bahtS(tw.value)} · ${pcs(tw.qty)}</div>
+      ${d.weekList.length?d.weekList.map(r=>`<div class="wkRow"><span><b>${esc(r.customer||r.so)}</b>
+        <small>${esc(r.so)} · ${esc(thDate(r.date))} · ${pcs(r.qty)}${r.pic?' · '+esc(r.pic):''}</small></span>
+        <span style="display:flex;gap:6px;align-items:center"><span class="pill ${r.type==='sew'?'ok':'muted'}">${r.type==='sew'?'ตัดใหม่':'สต๊อก'}</span><b>${bahtS(r.value)}</b></span></div>`).join('')
+        :'<div style="color:var(--ink-3);font-size:12.5px;padding:8px 0">ยังไม่มีออเดอร์เสื้อสัปดาห์นี้</div>'}
     </div>
 
     <div class="supbox" style="padding:12px 14px">
       <div class="wkSec" style="margin-top:0">สรุปของคุณ (3 บรรทัด — ติดไปกับรายงานที่ copy)</div>
-      <div class="fld"><label>1. สัปดาห์นี้เปิดงานอะไรไปบ้าง / ดีลไหนกำลังจะปิด</label><input id="wkN1" placeholder="เช่น ปิดงาน CPF 300 ตัว รออนุมัติอีก 2 เจ้า"></div>
-      <div class="fld"><label>2. ติดอะไร ทำให้เปิดงานไม่ได้</label><input id="wkN2" placeholder="เช่น ลูกค้ายังไม่เคาะสี 3 งาน"></div>
+      <div class="fld"><label>1. สัปดาห์นี้ปิดงานอะไรไปบ้าง / ดีลไหนกำลังจะเข้า</label><input id="wkN1" placeholder="เช่น งาน CPF 300 ตัว ตัดใหม่ เข้าแล้ว"></div>
+      <div class="fld"><label>2. ติดอะไร ทำให้งานเดินไม่ได้</label><input id="wkN2" placeholder="เช่น ลูกค้ายังไม่เคาะสี 3 งาน"></div>
       <div class="fld"><label>3. ต้องการอะไรจากเพชร/เซล</label><input id="wkN3" placeholder="เช่น ขอราคาผ้า C20 ล็อตใหม่"></div>
     </div>`;
-  const NKEY='wk.notes.'+(d.who==='กิ่ง'?'':d.who+'.')+d.week.from;   // โน้ตแยกต่อคน (ของกิ่งใช้คีย์เดิม)
+  const NKEY='wk.notes.'+(d.who==='all'||d.who==='กิ่ง'?'':d.who+'.')+d.week.from;   // โน้ตแยกต่อคน
   try{const n=JSON.parse(localStorage.getItem(NKEY)||'{}');['1','2','3'].forEach(i=>{if(n['n'+i])$('#wkN'+i).value=n['n'+i]})}catch(e){}
   ['1','2','3'].forEach(i=>$('#wkN'+i).oninput=()=>{
     try{localStorage.setItem(NKEY,JSON.stringify({n1:$('#wkN1').value,n2:$('#wkN2').value,n3:$('#wkN3').value}))}catch(e){}});
   $('#wkWho').onchange=e=>{wkWho=e.target.value;renderWeek()};
   $('#wkPrev').onclick=()=>{wkOff--;renderWeek()};
   $('#wkNext').onclick=()=>{if(wkOff<0){wkOff++;renderWeek()}};
-  $$('#wkWrap .wkRow[data-id]').forEach(r=>r.onclick=()=>openDrawer(r.dataset.id));
   $('#wkCopy').onclick=()=>{
-    const L=[`🎯 ยอดเปิดงาน (${d.who==='all'?'ทั้งทีม':d.who}) · ${d.week.label}`,'',
-      (q.amount?`• เป้า ${q.key}: ${bahtS(q.value)} / ${bahtS(q.amount)} = ${q.pct}% · เหลืออีก ${bahtS(q.gap)} ใน ${q.daysLeft} วัน`+(q.perWeek?` (เฉลี่ย ${bahtS(q.perWeek)}/สัปดาห์)`:''):`• ${q.key} สะสม: ${bahtS(q.value)} (ยังไม่ได้ตั้งเป้า)`),
-      `• สะสมทั้งปี 2569: ${bahtS(y.value)} · ${y.so} ออเดอร์ · ${y.jobs} งาน`,
-      `• สัปดาห์นี้: ${bahtS(tw.value)} · ${tw.jobs} งาน (ตัดเย็บใหม่ ${tw.sewJobs} · สต๊อก ${tw.stockJobs})`,''];
-    if(d.rows.sew.length)L.push('งานตัดเย็บใหม่:',...d.rows.sew.map(r=>`  • ${r.id} ${r.title}${r.qty?' '+r.qty+' ตัว':''}${r.value?' = '+bahtS(r.value):''}`));
-    if(d.rows.stock.length)L.push('งานสต๊อก:',...d.rows.stock.map(r=>`  • ${r.id} ${r.title}${r.qty?' '+r.qty+' ตัว':''}`));
+    const ln=(lab,t)=>`• ${lab}: ${bahtS(t.value)} · ${t.orders} ออเดอร์ · ${pcs(t.qty)} (ตัดใหม่ ${bahtS(t.sew.value)} · สต๊อก ${bahtS(t.stock.value)})`;
+    const L=[`🎯 ยอดเสื้อ MerchMaker (${team?'ทั้งทีมจัดซื้อ':d.who}) · ${d.week.label}`,'',
+      ln('สัปดาห์นี้',tw), ln(`เดือน ${m.label}`,m)+(m.target?` = ${m.pct}% ของเป้า ${bahtS(m.target)}`:''),
+      `• ทั้งปี ${y.key}: ${bahtS(y.value)}`+(y.target?` = ${y.pct}% ของเป้า ${bahtS(y.target)} · เหลือ ${bahtS(y.gap)}`:''),''];
     const n1=$('#wkN1').value.trim(),n2=$('#wkN2').value.trim(),n3=$('#wkN3').value.trim();
-    if(n1||n2||n3)L.push('','สรุปจากจัดซื้อ:',n1?'1) '+n1:'',n2?'2) '+n2:'',n3?'3) '+n3:'');
+    if(n1||n2||n3)L.push('สรุปจากจัดซื้อ:',n1?'1) '+n1:'',n2?'2) '+n2:'',n3?'3) '+n3:'');
     navigator.clipboard.writeText(L.filter(x=>x!=='').join('\n'))
       .then(()=>toast('copy รายงานแล้ว — เอาไปวางในไลน์ได้เลย')).catch(()=>toast('copy ไม่ได้ ลองใหม่'))};
 }
