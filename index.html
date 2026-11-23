@@ -1524,6 +1524,7 @@ function render(){
   if(view==='running'){$('#running').style.display='grid';renderRunning(ids)}
   if(view==='cal'){$('#calWrap').style.display='block';renderCal(ids)}
   if(view==='gantt'){$('#ganttWrap').style.display='block';renderGantt(ids)}
+  $('#bar').style.display=view==='wk'?'none':'';   // หน้ายอดเสื้อไม่ได้ใช้ตัวกรองงาน
   if(view==='sup'){$('#supWrap').style.display='block';renderSup(ids)}
   if(view==='kpi'){$('#kpiWrap').style.display='block';renderKPI()}
   if(view==='wk'){$('#wkWrap').style.display='block';renderWeek()}
