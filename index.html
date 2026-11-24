@@ -1975,9 +1975,9 @@ async function renderWeek(){
     <div class="sbBar ${on?'on':''}" style="height:${Math.max(2,Math.round(v/max*100))}%"></div>
     <div class="sbLab">${esc(lab)}</div></div>`;
   const maxW=Math.max(1,...d.weeks.map(x=>x.value));
-  const curM=+m.key.slice(5);
-  const mRows=d.months.filter((x,i)=>i<curM||x.target);
-  const done=d.months.slice(0,curM-1).filter(x=>x.orders);       // เดือนที่จบแล้ว ใช้คิดค่าเฉลี่ย
+  const curF=m.key+'-01';                                          // ปีเป้า ก.พ.–ม.ค. → เทียบด้วยวันที่ ไม่ใช่ลำดับเดือน
+  const mRows=d.months.filter(x=>x.from<=curF||x.target);
+  const done=d.months.filter(x=>x.from<curF&&x.orders);           // เดือนที่จบแล้ว ใช้คิดค่าเฉลี่ย
   const avg=k=>done.length?done.reduce((a,x)=>a+(k(x)||0),0)/done.length:0;
   const tgtBox=(lab,t,target,pct,gap,extra)=>`<div class="qBox">
       <div class="qTop"><b>${lab}</b><span>${bahtS(t)} / ${bahtS(target)}</span></div>
@@ -2014,7 +2014,7 @@ async function renderWeek(){
       </tbody></table>
       <div style="font-size:11.5px;color:var(--ink-3);padding:6px 14px 10px">"ไม่มีบนบอร์ด" = ออเดอร์ที่ไม่มีงานบนบอร์ดนี้ (ส่วนใหญ่ขายจากสต๊อก)</div></div>`:''}
 
-    <div class="supbox" style="overflow-x:auto"><div class="supsec">ออเดอร์ที่รันต่อเดือน · ปี ${esc(y.key)}</div>
+    <div class="supbox" style="overflow-x:auto"><div class="supsec">ออเดอร์ที่รันต่อเดือน · ปีเป้า ${esc(y.key)}</div>
       <table class="ktab"><thead><tr><th>เดือน</th><th>ออเดอร์</th><th>จำนวนเสื้อ</th><th>มูลค่า</th><th>ตัดใหม่</th><th>สต๊อก</th>${team?'<th>เป้า</th>':''}</tr></thead><tbody>
       ${mRows.map((x,i)=>`<tr ${x.from.slice(0,7)===m.key?'style="background:var(--surface-2)"':''}><td><b>${esc(x.key)}</b></td><td>${x.orders}</td><td>${pcs(x.qty)}</td>
         <td><b>${bahtS(x.value)}</b></td><td>${bahtS(x.sew.value)}</td><td>${bahtS(x.stock.value)}</td>
@@ -2058,7 +2058,7 @@ async function renderWeek(){
     const ln=(lab,t)=>`• ${lab}: ${bahtS(t.value)} · ${t.orders} ออเดอร์ · ${pcs(t.qty)} (ตัดใหม่ ${bahtS(t.sew.value)} · สต๊อก ${bahtS(t.stock.value)})`;
     const L=[`🎯 ยอดเสื้อ MerchMaker (${team?'ทั้งทีมจัดซื้อ':d.who}) · ${d.week.label}`,'',
       ln('สัปดาห์นี้',tw), ln(`เดือน ${m.label}`,m)+(m.target?` = ${m.pct}% ของเป้า ${bahtS(m.target)}`:''),
-      `• ทั้งปี ${y.key}: ${bahtS(y.value)}`+(y.target?` = ${y.pct}% ของเป้า ${bahtS(y.target)} · เหลือ ${bahtS(y.gap)}`:''),''];
+      `• ปีเป้า ${y.key}: ${bahtS(y.value)}`+(y.target?` = ${y.pct}% ของเป้า ${bahtS(y.target)} · เหลือ ${bahtS(y.gap)}`:''),''];
     const n1=$('#wkN1').value.trim(),n2=$('#wkN2').value.trim(),n3=$('#wkN3').value.trim();
     if(n1||n2||n3)L.push('สรุปจากจัดซื้อ:',n1?'1) '+n1:'',n2?'2) '+n2:'',n3?'3) '+n3:'');
     navigator.clipboard.writeText(L.filter(x=>x!=='').join('\n'))
